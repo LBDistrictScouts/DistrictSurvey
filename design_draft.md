@@ -1019,7 +1019,7 @@ rebuilding the previous release ID.
 
 | File | Action | Change and reason |
 | --- | --- | --- |
-| `package.json` | Modify | Add `survey:validate`, `test`, `test:e2e`, `test:a11y` and `build:functions` scripts. Make `build` call validation directly, and add runtime and test dependencies. |
+| `package.json` | Modify | Add `survey:validate`, `test`, `test:coverage`, `test:mutation`, `test:e2e`, `test:a11y` and `build:functions` scripts. Make `build` call validation directly, and add runtime and test dependencies. |
 | `yarn.lock` | Modify | Records the new dependencies. |
 | `next.config.ts` | Modify | Set `trailingSlash: false` so routes match CloudFront's clean address rewrite. |
 | `tsconfig.json` | Modify | Include function, script and test code in type checking. |
@@ -1029,7 +1029,8 @@ rebuilding the previous release ID.
 | `CLAUDE.md` | Modify | Add the two-Lambda boundary, the survey commands and the rule on logged fields. |
 | `LICENSE` | Create | Publishes the project under the MIT licence. |
 | `THIRD_PARTY_NOTICES.md` | Create | Records the source, version and licence of each copied AlignUI component. |
-| `vitest.config.ts` | Create | Configures unit and component tests. |
+| `vitest.config.ts` | Create | Configures unit and component tests and enforces the coverage thresholds. |
+| `stryker.config.mjs` | Create | Runs mutation tests on the survey engine and signing code. |
 | `playwright.config.ts` | Create | Configures browser tests in both themes. |
 | `.pa11yci.cjs` | Create | Configures automated accessibility checks on the exported site. |
 | `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg` | Delete | Removes unused starter assets. |
@@ -1144,6 +1145,14 @@ rebuilding the previous release ID.
 | `infra/terraform/iam.tf` | Create | Creates separate roles for both Lambdas and GitHub Actions, and separate limited IAM users for DistrictWorkflow and DistrictStatistics. |
 | `infra/terraform/alarms.tf` | Create | Creates the API, Lambda, queue and missed-import alarms. |
 | `infra/terraform/README.md` | Create | Documents inputs, outputs and setup steps. |
+| `infra/terraform/.tflint.hcl` | Create | Configures Terraform linting. |
+| `infra/terraform/tests/storage.tftest.hcl` | Create | Proves buckets are private and encrypted, and intake versioning is off. |
+| `infra/terraform/tests/cloudfront.tftest.hcl` | Create | Proves logging is off, security headers are set, `/results*` is protected and `/results-access*` takes priority. |
+| `infra/terraform/tests/api-lambda.tftest.hcl` | Create | Proves routes, limits, restricted logs and separate Lambda configuration. |
+| `infra/terraform/tests/iam.tftest.hcl` | Create | Proves each role and user can reach only its own resources. |
+| `infra/terraform/tests/queue-turnstile-dns.tftest.hcl` | Create | Proves the queue, dead-letter queue, Turnstile widget and DNS records. |
+| `infra/terraform/tests/alarms.tftest.hcl` | Create | Proves every required alarm exists and notifies the alert topic. |
+| `infra/terraform/tests/module-inputs.tftest.hcl` | Create | Proves the module has no district-specific defaults and rejects invalid inputs. |
 
 ##### CI, deployment and documentation
 
@@ -1169,7 +1178,40 @@ rebuilding the previous release ID.
 | `tests/e2e/tracked-link.spec.ts` | Create | Covers a tracked journey from link to results. |
 | `tests/e2e/open-link.spec.ts` | Create | Covers adult and young-person routes. |
 | `tests/e2e/results-access.spec.ts` | Create | Covers protected pages and the emailed link on a second device. |
-| `tests/e2e/accessibility.spec.ts` | Create | Covers keyboard use and focus in both themes. |
+| `tests/e2e/accessibility.spec.ts` | Create | Covers keyboard use, focus and axe checks on every page in both themes. |
+| `tests/survey-engine/evaluate.property.test.ts` | Create | Generates random surveys and answers to prove routing rules always hold. |
+| `tests/survey-engine/yearly-reuse.test.ts` | Create | Proves a new survey year needs no code change and question ID rules are enforced. |
+| `tests/scripts/survey-validate-cli.test.ts` | Create | Covers route previews and error messages. |
+| `tests/functions/signing.test.ts` | Create | Covers forged, expired and wrongly signed values. |
+| `tests/functions/s3-records.test.ts` | Create | Covers conditional writes, retries and two simultaneous submissions. |
+| `tests/functions/survey-window.test.ts` | Create | Covers opening dates, closing dates and close switches. |
+| `tests/functions/stored-fields.test.ts` | Create | Fails if a stored file contains an unapproved field. |
+| `tests/functions/cookies.test.ts` | Create | Covers signed cookie paths, flags and expiry. |
+| `tests/functions/turnstile.test.ts` | Create | Covers accepted, rejected and unavailable Turnstile checks. |
+| `tests/functions/bundle-separation.test.ts` | Create | Fails if either Lambda bundle contains the other's code or secrets. |
+| `tests/client/drafts.test.ts` | Create | Covers draft expiry, version changes and session-only storage. |
+| `tests/client/receipts.test.ts` | Create | Covers storing, clearing and restricting receipts. |
+| `tests/client/api.test.ts` | Create | Covers retries and error mapping. |
+| `tests/client/invite-link.test.ts` | Create | Proves the token is read once and removed from the address bar. |
+| `tests/config/build-data.test.ts` | Create | Covers valid, invalid and unavailable build data. |
+| `tests/config/theme-contrast.test.ts` | Create | Proves required colour pairs meet their contrast targets in both themes. |
+| `tests/components/ui-wrappers.test.tsx` | Create | Proves each `src/ui` wrapper keeps its keyboard and label behaviour. |
+| `tests/components/results-list.test.tsx` | Create | Covers results, hidden groups and empty states. |
+| `tests/contracts/file-contracts.test.ts` | Create | Validates shared file, message and API fixtures against the published schemas. |
+| `tests/contracts/results-golden.test.ts` | Create | Generates the golden files that DistrictStatistics must match. |
+| `tests/contracts/fixtures/*` | Create | Holds shared example files and expected results for every repository. |
+| `tests/infra/clean-urls.test.ts` | Create | Covers the CloudFront address rewrite. |
+| `tests/repo/workflow-safety.test.ts` | Create | Fails if a pull request job can use cluster runners or a results job uploads artifacts. |
+| `tests/repo/no-district-values.test.ts` | Create | Fails if district-specific values enter the public code. |
+| `tests/e2e/receipt.spec.ts` | Create | Covers receipt confirmation, refusal and shared devices. |
+| `tests/e2e/young-people.spec.ts` | Create | Covers every section route, safeguarding panels and comment rules. |
+| `tests/e2e/resilience.spec.ts` | Create | Covers lost connections, retries, version changes and closed surveys. |
+| `tests/e2e/privacy-content.spec.ts` | Create | Confirms the respondent promise and technical records wording. |
+| `tests/deployed/deployed-smoke.spec.ts` | Create | Proves a tracked journey across all deployed systems. |
+| `tests/deployed/deployed-access.spec.ts` | Create | Proves CloudFront blocks results without valid cookies. |
+| `tests/deployed/load-test.js` | Create | Runs the k6 load test. |
+| `tests/deployed/alarm-drill.sh` | Create | Triggers each alarm in the test environment. |
+| `tests/deployed/restore-drill.sh` | Create | Restores a batch from a recovery archive. |
 
 #### Repository: `DistrictInfrastructure`
 
@@ -1210,7 +1252,16 @@ rebuilding the previous release ID.
 | `apps/web/src/app/workflows/survey/definition/page.tsx` | Create | Documents the workflow, matching the existing workflow pages. |
 | `apps/web/src/lib/workflow-tasks.ts` | Modify | Adds survey task types. |
 | `apps/worker/tests/survey.test.ts` | Create | Covers repeat messages, single thank-you emails and reminder limits. |
-| `apps/worker/tests/survey.integration.ts` | Create | Covers the import, archive verification and failed-run recovery. |
+| `apps/worker/tests/survey-import.integration.ts` | Create | Covers the import, archive verification, deletion, release detection and failed-run recovery. |
+| `apps/worker/tests/survey-completion.integration.ts` | Create | Covers queue intake, repeated messages, task completion and the single thank-you email. |
+| `apps/worker/tests/survey-comments.test.ts` | Create | Covers comment tasks, deadlines and escalation to the deputy. |
+| `apps/worker/tests/survey-workflow-history.test.ts` | Create | Fails if Temporal history contains answers or comment text. |
+| `apps/worker/tests/survey-workflow-replay.test.ts` | Create | Replays recorded histories to prove workflow changes stay compatible. |
+| `apps/worker/tests/spam-recovery.integration.ts` | Create | Covers closing open links and removing affected open-link days. |
+| `apps/worker/tests/survey-email.test.ts` | Create | Covers invitation, reminder, thank-you and final results emails. |
+| `packages/integrations/tests/survey-links.test.ts` | Create | Covers signed links and results tokens. |
+| `packages/persistence/tests/survey-repository.test.ts` | Create | Covers forward-only task status against PostgreSQL. |
+| `apps/web/tests/survey-workflow-pages.test.tsx` | Create | Covers counts, named status permissions and comment tasks. |
 | `packages/persistence/README.md` | Modify | Documents the new tables and retention. |
 | `docs/survey.md` | Create | Documents setup, schedules, operations and deletion. |
 
@@ -1245,6 +1296,17 @@ rebuilding the previous release ID.
 | `tests/TestCase/Controller/Api/SurveyImportsControllerTest.php` | Create | Covers service authentication and API errors. |
 | `tests/TestCase/Controller/SurveyCommentsControllerTest.php` | Create | Confirms that only named reviewers can read comments. |
 | `tests/TestCase/Controller/SurveyDashboardControllerTest.php` | Create | Confirms that only analysts have access, that groups below 6 stay hidden, and that no individual data appears. |
+| `tests/TestCase/Policy/SurveyDashboardPolicyTest.php` | Create | Covers analyst access rules. |
+| `tests/TestCase/Policy/SurveyCommentPolicyTest.php` | Create | Covers reviewer and deputy access rules. |
+| `tests/TestCase/Service/SurveyResultsPublisherTest.php` | Create | Covers release files, repeat runs and comment exclusion. |
+| `tests/TestCase/Service/SurveyGoldenFilesTest.php` | Create | Proves tags and results match the shared golden files. |
+| `tests/TestCase/Service/StaffAuditLoggerTest.php` | Create | Proves audit entries contain no survey answers. |
+| `tests/TestCase/Middleware/ServiceApiMiddlewareTest.php` | Create | Covers valid, missing and invalid service credentials. |
+| `tests/TestCase/Controller/Api/SurveyBuildDataControllerTest.php` | Create | Covers build data, unknown surveys and access rules. |
+| `tests/TestCase/Controller/Api/SurveyVersionsControllerTest.php` | Create | Covers storing and rejecting survey versions. |
+| `tests/TestCase/Controller/Api/SurveyReleasesControllerTest.php` | Create | Covers changed and unchanged releases. |
+| `tests/TestCase/Model/Table/SurveyTablesTest.php` | Create | Covers validation rules and unique submission IDs on the new tables. |
+| `tests/Fixture/Survey*Fixture.php` | Create | Provides test data for each new table. |
 
 #### Repository: `Homelab`
 
@@ -1262,22 +1324,117 @@ rebuilding the previous release ID.
 | `K8S/DistrictWorkflow/cloudflared-deployment.yaml` | Create | Connects DistrictWorkflow to its signed Cloudflare Tunnel. |
 | `K8S/DistrictWorkflow/onepassworditem.yaml` | Create | Supplies application, tunnel and AWS credentials. |
 | `K8S/ArgoCD/apps/apps/district-workflow.yaml` | Create | Deploys DistrictWorkflow through Argo CD. |
+| `K8S/scripts/validate-survey-manifests.sh` | Create | Builds and validates the survey application manifests. |
 | `K8S/GitHubActionsRunnersLBDistrictScouts/README.md` | Modify | Records that `district-survey` may use the runners only from protected workflows. |
 
 ### Verification Plan
 
-*   **Compilation/Build**: `yarn survey:validate`, `yarn build` and `yarn build:functions`. `terraform validate` for the
-    module. `corepack yarn build` in DistrictWorkflow.
-*   **Unit Tests**: `yarn test`, `corepack yarn test` in DistrictWorkflow and `vendor/bin/phpunit` in DistrictStatistics.
-*   **Static Analysis & Linting**: `yarn lint`, `yarn typecheck`, `terraform fmt -check`, `corepack yarn lint` in
-    DistrictWorkflow, and `vendor/bin/phpcs` and `vendor/bin/phpstan` in DistrictStatistics.
-*   **Test Coverage Requirement**: 90% branch coverage for the survey engine and both Lambdas, and 85% for the results
-    calculator.
-*   **E2E/Integration**: `yarn test:e2e`, `yarn test:a11y`, and `corepack yarn test:integration` in DistrictWorkflow.
-*   **Privacy checks**: Automated tests confirm that stored files contain only approved fields, and that logs contain
-    only approved fields. A test run confirms that no intake file survives a verified import.
-*   **Launch rehearsal**: On the test environment, complete every CUJ, cause every alarm once, restore one archive,
-    run the close-down deletion, and confirm that results stop working after their expiry date.
+Every goal and user journey must have at least one automated test before implementation is complete. A pull request fails
+if a required suite fails, a coverage threshold is missed, or a goal in the traceability matrix has no passing test.
+
+#### Test suites
+
+| Suite | Repository | Tools | What it proves | Runs |
+| --- | --- | --- | --- | --- |
+| TypeScript unit and component | `district-survey` | Vitest, Testing Library, fast-check | Survey logic, Lambdas, browser storage, screens and error handling | Every pull request |
+| Mutation | `district-survey` | Stryker | The tests detect deliberate faults in the survey engine and signing code | Every pull request that changes that code |
+| Contract | All application repositories | JSON Schema fixtures and shared golden files | Every system reads and writes the same file, message and API formats | Every pull request |
+| End to end | `district-survey` | Playwright with Chromium, Firefox, WebKit and phone viewports | Each user journey in light and dark themes | Every pull request |
+| Accessibility | `district-survey` | axe in Playwright, pa11y-ci | WCAG 2.2 AA checks, keyboard use and focus on every page in both themes | Every pull request |
+| Terraform | `district-survey` | `terraform test` with mocked providers, TFLint, Trivy | Privacy, access, routing, alarm and encryption settings | Every pull request |
+| Workflow safety | `district-survey` | actionlint, zizmor and a repository test | Pull requests cannot reach cluster runners, and results cannot leave as artifacts | Every pull request |
+| DistrictWorkflow | `DistrictWorkflow` | Node test runner, Temporal test environment and replayer, PostgreSQL, web tests | Workflows, activities, repositories, emails, schedules and staff pages | Every pull request |
+| DistrictStatistics | `DistrictStatistics` | PHPUnit with PCOV, PostgreSQL, PHPStan, Psalm, PHPCS | Imports, calculations, APIs, sign-in, permissions and dashboards | Every pull request |
+| Kubernetes | `Homelab` | Kustomize and kubeconform | Manifests build and match Kubernetes schemas | Every manifest change |
+| Deployed environment | Test environment | Playwright, k6 and scripted drills | The connected system works, meets its limits and recovers from faults | Before the pilot and before launch |
+
+#### Coverage thresholds
+
+| Code | Line coverage | Branch coverage | Additional requirement |
+| --- | --- | --- | --- |
+| `src/lib/survey-engine` | 100% | 100% | Mutation score of at least 90% |
+| `functions/**` | 95% | 95% | Mutation score of at least 80% for signing and S3 record code |
+| `src/lib/client`, `src/lib/config`, `src/lib/contracts` | 95% | 90% | None |
+| `src/components`, `src/ui`, `src/app` | 90% | 85% | Every screen covered by end-to-end tests |
+| DistrictWorkflow survey code | 95% | 90% | Workflow replay test for every survey workflow |
+| DistrictStatistics import and results services | 100% | 95% | Shared golden files must match |
+| Other DistrictStatistics survey code | 90% | 85% | PHPStan at level 8 with no ignored survey errors |
+| Terraform module | Not applicable | Not applicable | Every `.tf` file has at least one `terraform test` assertion |
+
+Vendored AlignUI source is excluded from coverage. Its local `src/ui` wrappers are included.
+
+#### Commands
+
+*   **Compilation/Build**: `yarn survey:validate`, `yarn build`, `yarn build:functions`, `terraform validate`,
+    `corepack yarn build` in DistrictWorkflow and `composer install --no-dev` in DistrictStatistics.
+*   **Unit Tests**: `yarn test:coverage`, `yarn test:mutation`, `corepack yarn test` in DistrictWorkflow and
+    `vendor/bin/phpunit --coverage-text` in DistrictStatistics.
+*   **Static Analysis & Linting**: `yarn lint`, `yarn typecheck`, `terraform fmt -check`, `tflint`, `trivy config infra/terraform`,
+    `actionlint`, `zizmor .github/workflows`, `corepack yarn typecheck` and `corepack yarn lint` in DistrictWorkflow, and
+    `vendor/bin/phpcs`, `vendor/bin/phpstan` and `vendor/bin/psalm` in DistrictStatistics.
+*   **Test Coverage Requirement**: The thresholds above are enforced in each repository's CI.
+*   **E2E/Integration**: `yarn test:e2e`, `yarn test:a11y`, `terraform test` in `infra/terraform`,
+    `corepack yarn test:integration` in DistrictWorkflow and `K8S/scripts/validate-survey-manifests.sh` in `Homelab`.
+
+#### Goal traceability
+
+| Goal | Test suites | Main tests |
+| --- | --- | --- |
+| G1 Question routing | Unit, end to end | `evaluate.test.ts`, `evaluate.property.test.ts`, `open-link.spec.ts` |
+| G2 One open link | Unit, end to end | `evaluate.test.ts`, `response.test.ts`, `open-link.spec.ts` |
+| G3 Saved progress | Unit, component, end to end | `drafts.test.ts`, `survey-runner.test.tsx`, `resilience.spec.ts` |
+| G4 Accessibility and brand | Unit, accessibility | `theme-contrast.test.ts`, `accessibility.spec.ts`, `.pa11yci.cjs` |
+| G5 Volunteer tracking | Unit, DistrictWorkflow, deployed | `tracking.test.ts`, `survey-completion.integration.ts`, `deployed-smoke.spec.ts` |
+| G6 Separation of answers from identity | Unit, contract, DistrictWorkflow, DistrictStatistics | `stored-fields.test.ts`, `file-contracts.test.ts`, `survey-import.integration.ts`, `SurveyImportServiceTest.php` |
+| G7 One response per tracked link | Unit, end to end | `response.test.ts`, `s3-records.test.ts`, `tracked-link.spec.ts` |
+| G8 Open-link response counted once | Unit, end to end | `tracking.test.ts`, `receipt.spec.ts` |
+| G9 Accurate promise | End to end | `privacy-content.spec.ts` |
+| G10 Results access | End to end, Terraform, deployed | `results-access.spec.ts`, `cloudfront.tftest.hcl`, `deployed-access.spec.ts` |
+| G11 Minimum group size | Contract, DistrictStatistics | `results-golden.test.ts`, `SurveyResultsCalculatorTest.php` |
+| G12 Stepped updates | DistrictStatistics, DistrictWorkflow | `SurveyResultsCalculatorTest.php`, `survey-import.integration.ts` |
+| G13 Comments stay private | Contract, DistrictStatistics | `file-contracts.test.ts`, `SurveyResultsPublisherTest.php` |
+| G14 Young people's comments | Unit, end to end | `validate.test.ts`, `response.test.ts`, `young-people.spec.ts` |
+| G15 Safeguarding information | Unit, end to end, accessibility | `validate.test.ts`, `young-people.spec.ts`, `accessibility.spec.ts` |
+| G16 Comment review | Unit, DistrictWorkflow, DistrictStatistics | `validate.test.ts`, `survey-comments.test.ts`, `SurveyCommentsControllerTest.php` |
+| G17 Survey validation | Unit | `validate.test.ts`, `survey-validate-cli.test.ts` |
+| G18 Failure visibility | Terraform, deployed | `alarms.tftest.hcl`, `alarm-drill.sh` |
+| G19 Yearly reuse | Unit, DistrictStatistics | `yearly-reuse.test.ts`, `SurveyImportServiceTest.php` |
+| G20 Reuse by other districts | Workflow safety, Terraform | `no-district-values.test.ts`, `module-inputs.tftest.hcl` |
+| G21 Survey window | Unit, end to end | `survey-window.test.ts`, `resilience.spec.ts` |
+| G22 Scheduled import | DistrictWorkflow | `survey-import.integration.ts`, `survey-workflow-history.test.ts` |
+| G23 Recovery archive | DistrictWorkflow, deployed | `survey-import.integration.ts`, `restore-drill.sh` |
+| G24 Results generation | DistrictStatistics, DistrictWorkflow, workflow safety | `SurveyResultsPublisherTest.php`, `survey-import.integration.ts`, `workflow-safety.test.ts` |
+| G25 Technical records notice | End to end | `privacy-content.spec.ts` |
+| G26 Analyst dashboard | DistrictStatistics | `SurveyDashboardControllerTest.php`, `SurveyDashboardPolicyTest.php` |
+
+#### User journey traceability
+
+| Journey | End-to-end or integration test |
+| --- | --- |
+| CUJ 1 Invited volunteer completes the survey | `tracked-link.spec.ts`, `survey-completion.integration.ts` |
+| CUJ 2 Open-link response counts for a tracked link | `receipt.spec.ts` |
+| CUJ 3 Someone else on a shared device | `receipt.spec.ts` |
+| CUJ 4 Parent or carer responds | `open-link.spec.ts` |
+| CUJ 5 Scout or Explorer leaves a comment | `young-people.spec.ts`, `survey-comments.test.ts` |
+| CUJ 6 Beaver or Cub takes part | `young-people.spec.ts` |
+| CUJ 7 Volunteer views results | `results-access.spec.ts` |
+| CUJ 8 Connection fails during submission | `resilience.spec.ts` |
+| CUJ 9 Survey author prepares next year's survey | `survey-validate-cli.test.ts`, `yearly-reuse.test.ts` |
+| CUJ 10 Operator responds to spam | `spam-recovery.integration.ts`, `SurveyImportServiceTest.php` |
+| CUJ 11 Volunteer opens results on a second device | `results-access.spec.ts` |
+| CUJ 12 Analyst reviews results | `SurveyDashboardControllerTest.php` |
+
+#### Non-functional and launch checks
+
+*   **Performance:** k6 proves the 2-second response target at expected peak load, and confirms that rate limits do not block a
+    section submitting together.
+*   **Security:** Automated tests confirm security headers, forged and expired signed values, blocked results requests without
+    cookies, and that direct API access outside CloudFront is refused.
+*   **Privacy:** Tests confirm that stored files and logs contain only approved fields, that the response Lambda bundle contains
+    no tracking code, and that Temporal history contains file names only.
+*   **Recovery:** Drills restore an archive, replay a failed import, expire a results link, and complete the close-down deletion.
+*   **Alarms:** Each alarm is triggered once in the test environment, and its notification is confirmed.
+*   **Launch rehearsal:** All 12 user journeys pass on the test environment before the pilot.
 
 --------------------------------------------------------------------------------
 
