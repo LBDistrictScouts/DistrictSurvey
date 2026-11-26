@@ -2073,13 +2073,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lbdistrictscouts/survey-engine@file:../DistrictWorkflow/packages/survey-engine/package.tgz::locator=district-survey%40workspace%3A.":
+"@lbdistrictscouts/survey-engine@file:../DistrictWorkflow/packages/survey-engine/package::locator=district-survey%40workspace%3A.":
   version: 1.0.0
-  resolution: "@lbdistrictscouts/survey-engine@file:../DistrictWorkflow/packages/survey-engine/package.tgz#../DistrictWorkflow/packages/survey-engine/package.tgz::hash=18d631&locator=district-survey%40workspace%3A."
+  resolution: "@lbdistrictscouts/survey-engine@file:../DistrictWorkflow/packages/survey-engine/package#../DistrictWorkflow/packages/survey-engine/package::hash=5057a2&locator=district-survey%40workspace%3A."
   dependencies:
     yaml: "npm:2.9.1"
     zod: "npm:4.6.7"
-  checksum: 10c0/87a03ecf8fc538d236a985b76649554368cf82c53a17cc13795f656e6dd10f2946c74db58d7e8b2917932e56a32a829f2a58af06783c1c823ce20abc604dbecd
+  checksum: 10c0/34c3783b8bfbad45b6798cf0921d923bb7bcb324185205edf58b4d36e78b57a5b95bbee1ade2826ec85715899a38ebdd9705428372566c94cd4480e2f6b7e032
   languageName: node
   linkType: hard
 
@@ -5840,7 +5840,7 @@ __metadata:
     "@aws-sdk/client-ssm": "npm:3.1173.0"
     "@aws-sdk/cloudfront-signer": "npm:3.1172.0"
     "@axe-core/playwright": "npm:4.14.0"
-    "@lbdistrictscouts/survey-engine": "file:../DistrictWorkflow/packages/survey-engine/package.tgz"
+    "@lbdistrictscouts/survey-engine": "file:../DistrictWorkflow/packages/survey-engine/package"
     "@playwright/test": "npm:1.65.1"
     "@radix-ui/react-checkbox": "npm:1.4.1"
     "@radix-ui/react-dialog": "npm:1.3.1"
