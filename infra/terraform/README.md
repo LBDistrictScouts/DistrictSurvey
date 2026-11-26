@@ -81,8 +81,10 @@ terraform fmt -check -recursive
 terraform test
 (cd tests/root && terraform init -backend=false && terraform validate)
 tflint --init && tflint
-trivy config .
+trivy config --severity HIGH,CRITICAL --ignorefile .trivyignore.yaml .
 ```
+
+`.trivyignore.yaml` lists the accepted Trivy findings, each with its reason and scoped to one file.
 
 `terraform test` uses mock providers, so it creates nothing. Every resource that controls access,
 encryption, logging, routing or alarms has an assertion. Run blocks named `g18_...`, `g20_...` and so on

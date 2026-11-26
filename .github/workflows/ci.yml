@@ -127,6 +127,8 @@ jobs:
           scan-ref: district-survey/infra/terraform
           exit-code: "1"
           severity: HIGH,CRITICAL
+          # Accepted findings, each with its reason and scoped to one file.
+          trivyignores: district-survey/infra/terraform/.trivyignore.yaml
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: terraform-report

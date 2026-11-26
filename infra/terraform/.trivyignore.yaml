@@ -1,0 +1,20 @@
+# Accepted Trivy findings for the survey module. Each is scoped to the one file it applies to, so the same
+# finding anywhere else still fails CI.
+misconfigurations:
+  - id: AWS-0132
+    paths: ["storage.tf"]
+    statement: >-
+      The buckets use SSE-S3 (AES256) with AWS-managed keys. Bucket policies and IAM already limit each role to
+      its own prefixes, so a customer-managed key policy would only repeat those rules, at extra cost.
+  - id: AWS-0136
+    paths: ["email.tf"]
+    statement: >-
+      The SES feedback topic uses the AWS-managed aws/sns key. Its messages hold recipients' email addresses,
+      the topic policy lets only SES in this account publish, and the module's only subscription is the feedback
+      queue. That queue uses SQS-managed encryption, so a customer-managed key here would not cover the whole path.
+  - id: AWS-0011
+    paths: ["cloudfront-results.tf"]
+    statement: >-
+      The module's only WAF rule rate-limits the open-link response route, which the results distribution does
+      not serve. Results data needs a signed cookie, the shell pages hold no questions or figures, and
+      /api/results-access goes through API Gateway throttling and checks an Ed25519-signed token.
