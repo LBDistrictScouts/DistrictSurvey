@@ -51,21 +51,30 @@ jobs:
     name: OpenAPI breaking changes
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: district-survey
           fetch-depth: 0
           persist-credentials: false
+      # The statistics API refers to the engine's schemas in node_modules.
+      - uses: ./district-survey/.github/actions/setup
       - name: Fail on an unversioned breaking change
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          curl -fsSL https://github.com/oasdiff/oasdiff/releases/download/v1.11.7/oasdiff_1.11.7_linux_amd64.tar.gz | tar -xz -C /tmp oasdiff
+          curl -fsSL https://github.com/oasdiff/oasdiff/releases/download/v1.37.0/oasdiff_1.37.0_linux_amd64.tar.gz | tar -xz -C /tmp oasdiff
+          # The whole base contracts folder, so the specs' relative $refs to ../schemas resolve. The base
+          # reads this branch's engine schemas; an engine change shows as a version bump in package.json.
+          mkdir -p /tmp/base
+          git archive "origin/${BASE_REF}" contracts | tar -x -C /tmp/base
+          ln -s "$PWD/node_modules" /tmp/base/node_modules
           for spec in contracts/openapi/*.v1.yaml; do
-            if git cat-file -e "origin/${BASE_REF}:${spec}" 2>/dev/null; then
-              git show "origin/${BASE_REF}:${spec}" > /tmp/base.yaml
-              /tmp/oasdiff breaking /tmp/base.yaml "$spec" --fail-on ERR
+            if [ -f "/tmp/base/$spec" ]; then
+              /tmp/oasdiff breaking "/tmp/base/$spec" "$spec" --fail-on ERR
             fi
           done
 
