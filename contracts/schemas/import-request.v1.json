@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/import-request.v1.json",
+  "title": "Import request",
+  "description": "The body of POST /api/v1/survey-imports/{batchId} on DistrictStatistics: newline-delimited JSON. The first line is the header, then one record per line. DistrictWorkflow streams intake files into it without storing them, and file names are never sent.",
+  "$defs": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "batchId": { "type": "string", "format": "uuid", "description": "A random UUID created by DistrictWorkflow" },
+        "surveyId": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+        "answerCount": { "type": "integer", "minimum": 0, "maximum": 2000 },
+        "commentCount": { "type": "integer", "minimum": 0, "maximum": 2000 }
+      },
+      "required": ["schemaVersion", "batchId", "surveyId", "answerCount", "commentCount"],
+      "additionalProperties": false
+    },
+    "record": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "answer" }, "file": { "$ref": "answer-file.v1.json" } },
+          "required": ["kind", "file"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "comment" }, "file": { "$ref": "comment-file.v1.json" } },
+          "required": ["kind", "file"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "result": {
+      "description": "The response once DistrictStatistics has stored the batch. Repeating a batch returns the same counts and changes nothing.",
+      "type": "object",
+      "properties": {
+        "batchId": { "type": "string", "format": "uuid" },
+        "storedAnswers": { "type": "integer", "minimum": 0 },
+        "storedComments": { "type": "integer", "minimum": 0 },
+        "duplicates": { "type": "integer", "minimum": 0, "description": "Records skipped because their submission or comment ID was already stored" },
+        "checksum": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the request body" }
+      },
+      "required": ["batchId", "storedAnswers", "storedComments", "duplicates", "checksum"],
+      "additionalProperties": false
+    }
+  }
+}

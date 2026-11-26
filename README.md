@@ -1,34 +1,60 @@
-# district-survey
+# DistrictSurvey
 
-A React app built with [Next.js](https://nextjs.org) and exported as a static site.
+A survey tool that asks each person only the questions that apply to them, tracks which invited volunteers
+have responded, and keeps that tracking apart from what they answered. The design is in
+[`docs/designs/district_survey.md`](docs/designs/district_survey.md).
+
+| Part | Where |
+| --- | --- |
+| Survey site, a static Next.js export | `src/` |
+| Response Lambda, which saves answers and never sees invite UUIDs | `functions/response/` |
+| Tracking Lambda, which handles invitations and results access and never sees answers | `functions/tracking/` |
+| Terraform module, imported by DistrictInfrastructure | `infra/terraform/` |
+| Contracts shared with DistrictWorkflow and DistrictStatistics | `contracts/` |
+
+The survey engine (routing, validation and fingerprints) is `@lbdistrictscouts/survey-engine` in
+DistrictWorkflow's `packages/survey-engine`.
 
 ## Getting started
 
-This project uses Yarn through Corepack. The version is pinned in `package.json`.
-
 ```bash
 corepack enable
-```
-
-```bash
+# The engine is a file dependency on a DistrictWorkflow checkout beside this one, until it is published.
+(cd ../DistrictWorkflow && corepack yarn install && corepack yarn workspace @lbdistrictscouts/survey-engine build)
 yarn install
-```
-
-```bash
 yarn dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+`yarn dev` uses the made-up survey in `examples/`. To run the APIs too, see
+[docs/local-development.md](docs/local-development.md).
 
-## Scripts
+## Commands
 
-| Command          | Purpose                                  |
-| ---------------- | ---------------------------------------- |
-| `yarn dev`       | Start the development server             |
-| `yarn build`     | Export the static site to `out/`         |
-| `yarn lint`      | Run ESLint                               |
-| `yarn typecheck` | Check types with the TypeScript compiler |
+| Command | Purpose |
+| --- | --- |
+| `yarn dev`, `yarn dev:all` | The site alone, or the site with the local Lambda server and results proxy |
+| `yarn build` | Fetch build data and export the site to `out/` |
+| `yarn build:functions` | Bundle both Lambdas into `dist/functions/` |
+| `yarn lint`, `yarn typecheck` | ESLint and TypeScript |
+| `yarn test`, `yarn test:coverage` | Unit, component and contract tests, with coverage thresholds |
+| `yarn test:mutation` | Mutation tests for the signing and S3 record code |
+| `yarn test:e2e`, `yarn test:a11y` | Browser and accessibility tests against `out/` |
+| `yarn test:stack` | The pull request stack: Moto in Docker, then the browser tests |
+| `yarn survey:validate` | Check a survey file and list every question path |
+| `yarn secrets:create` | Generate and store an environment's keys |
+| `yarn traceability` | Check every assigned goal has a passing tagged test |
 
-## Deployment
+## Writing a survey
 
-Run `yarn build` and upload the contents of `out/` to any static file host.
+See [docs/survey-authoring.md](docs/survey-authoring.md).
+
+## Deploying
+
+`deploy.yml` deploys `main` to test, and a `v*` tag to production after approval. Builds run on the cluster runner
+named by `SURVEY_RUNNER_LABEL`, fetch the approved survey from DistrictStatistics, and check that the site and
+the response Lambda use the same fingerprint. See [infra/terraform/README.md](infra/terraform/README.md) for
+setting up an environment.
+
+## Licence
+
+MIT. AlignUI components are MIT too: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

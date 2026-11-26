@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/archive.v1.json",
+  "title": "Recovery archive",
+  "description": "archive/{surveyId}/{batchId}.jsonl.gz in the archive bucket: gzip-compressed JSON Lines with one import record per line in shuffled order, so line order says nothing about upload order. {batchId}.sha256 alongside holds the SHA-256 of the uncompressed content as 64 lower-case hex characters.",
+  "$defs": {
+    "line": { "$ref": "import-request.v1.json#/$defs/record" },
+    "key": { "type": "string", "pattern": "^archive/[a-z0-9][a-z0-9-]{0,63}/[0-9a-f-]{36}\\.(jsonl\\.gz|sha256)$" },
+    "checksum": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

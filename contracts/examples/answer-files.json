@@ -1,0 +1,36 @@
+{
+  "$comment": "Example answer files as the response Lambda writes them. Made-up answers only.",
+  "files": [
+    {
+      "schemaVersion": "1.0",
+      "surveyId": "example-2027",
+      "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19",
+      "submissionId": "0b6f1d3a-2c4e-4a9b-8f7e-1d2c3b4a5e6f",
+      "source": "tracked",
+      "submittedOn": "2027-03-14",
+      "answers": { "age-group": "adult", "adult-roles": ["volunteer"], "communication": 4, "support": 3, "time": "2-to-5" }
+    },
+    {
+      "schemaVersion": "1.0",
+      "surveyId": "example-2027",
+      "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19",
+      "submissionId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d",
+      "source": "open",
+      "submittedOn": "2027-03-15",
+      "answers": { "age-group": "adult", "adult-roles": ["parent", "volunteer"], "child-sections": ["cubs", "scouts"], "communication": 5, "value": "mostly", "support": 4, "time": "under-2" }
+    },
+    {
+      "schemaVersion": "1.0",
+      "surveyId": "example-2027",
+      "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19",
+      "submissionId": "3c2b1a0f-9e8d-4c7b-a6f5-4e3d2c1b0a9f",
+      "source": "open",
+      "submittedOn": "2027-03-15",
+      "answers": { "age-group": "young-person", "section": "cubs", "enjoy": 5, "favourite": "outdoors" }
+    }
+  ],
+  "invalid": [
+    { "$comment": "An invite UUID must never be stored", "schemaVersion": "1.0", "surveyId": "example-2027", "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19", "submissionId": "0b6f1d3a-2c4e-4a9b-8f7e-1d2c3b4a5e6f", "source": "tracked", "submittedOn": "2027-03-14", "inviteUuid": "6f1c2a9e-4b7d-4e3a-9c5f-2d8b1a7e3f60", "answers": {} },
+    { "$comment": "Time of day must never be stored", "schemaVersion": "1.0", "surveyId": "example-2027", "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19", "submissionId": "0b6f1d3a-2c4e-4a9b-8f7e-1d2c3b4a5e6f", "source": "tracked", "submittedOn": "2027-03-14T15:30:00Z", "answers": {} }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/metrics.v1.json",
+  "title": "Custom metrics",
+  "description": "CloudWatch metrics in the namespace DistrictSurvey/{environment}. Every datum has no dimensions, unit Count, and value 1 unless stated, so metrics cannot identify a respondent.",
+  "type": "object",
+  "properties": {
+    "namespace": { "type": "string", "pattern": "^DistrictSurvey/(test|prod|local)$" },
+    "name": { "$ref": "#/$defs/name" },
+    "value": { "type": "number", "minimum": 0 },
+    "unit": { "enum": ["Count", "None"] }
+  },
+  "required": ["namespace", "name", "value", "unit"],
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "oneOf": [
+        { "const": "CompletionSendFailed", "description": "Tracking Lambda could not send a completion message" },
+        { "const": "TurnstileRejected", "description": "Response Lambda rejected a Turnstile token" },
+        { "const": "ImportHeartbeat", "description": "DistrictWorkflow finished an import run" },
+        { "const": "OldestIntakeAgeHours", "description": "DistrictWorkflow: age in hours of the oldest intake file. Unit None" },
+        { "const": "ArchiveVerifyFailed", "description": "DistrictWorkflow could not verify an archive" },
+        { "const": "CommentOverdue", "description": "DistrictWorkflow: comments still open 36 hours after import. Value is the count" },
+        { "const": "ReleaseFailed", "description": "DistrictWorkflow: the results release request failed" },
+        { "const": "SurveyBounceRate", "description": "DistrictWorkflow: bounced sends as a percentage of sends. Unit None" }
+      ]
+    }
+  }
+}

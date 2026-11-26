@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/answer-file.v1.json",
+  "title": "Answer file",
+  "description": "One response, written by the response Lambda to intake/answers/{fileKey}.json. Only these fields may be stored: no invite UUIDs, names, email addresses, IP addresses or time of day. Comment answers are stored separately as comment files.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "surveyId": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+    "surveyVersion": { "$ref": "#/$defs/surveyVersion" },
+    "submissionId": { "type": "string", "format": "uuid" },
+    "source": { "$ref": "#/$defs/source" },
+    "submittedOn": { "$ref": "#/$defs/date" },
+    "answers": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/questionId" },
+      "additionalProperties": { "$ref": "#/$defs/answerValue" },
+      "maxProperties": 200
+    }
+  },
+  "required": ["schemaVersion", "surveyId", "surveyVersion", "submissionId", "source", "submittedOn", "answers"],
+  "additionalProperties": false,
+  "$defs": {
+    "surveyVersion": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "source": { "enum": ["open", "tracked"], "description": "tracked only when a valid tracked pass was presented" },
+    "date": { "type": "string", "format": "date", "description": "The Europe/London date. Never a time." },
+    "questionId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "answerValue": {
+      "oneOf": [
+        { "type": "string", "minLength": 1, "maxLength": 1000 },
+        { "type": "array", "items": { "$ref": "#/$defs/questionId" }, "minItems": 1, "maxItems": 50, "uniqueItems": true },
+        { "type": "integer", "minimum": -100, "maximum": 100 }
+      ]
+    }
+  }
+}

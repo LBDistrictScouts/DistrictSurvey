@@ -1,0 +1,651 @@
+openapi: 3.1.0
+info:
+  title: DistrictStatistics data-core API
+  version: 1.0.0
+  summary: The private survey API in DistrictStatistics data-core.
+  description: |
+    Called by DistrictWorkflow, the survey build and the data-viz build, never by browsers. Each caller uses a
+    scoped service token as a bearer token. A token used outside its scope receives 403.
+
+    | Token | Scope |
+    | --- | --- |
+    | Import | Survey imports and result calculation |
+    | Comments | Listing, reading, task recording and deciding comments |
+    | Survey admin | Survey versions, settings, removals and close-down evidence |
+    | Build | Build data only |
+    | Results viewer | Published releases and approved comments |
+
+    The survey definition, compiled survey and settings schemas are published with the survey engine package
+    in DistrictWorkflow, at `packages/survey-engine/schemas/`.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://data-core.example.org
+security:
+  - serviceToken: []
+tags:
+  - name: surveys
+  - name: imports
+  - name: comments
+  - name: results
+
+paths:
+  /api/v1/surveys/{surveyId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    post:
+      tags: [surveys]
+      operationId: storeSurveyVersion
+      summary: Store a new numbered draft version
+      description: After the survey opens, a version with a different fingerprint is refused with 409.
+      x-token: survey-admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sourceYaml: { type: string, maxLength: 1048576 }
+                compiled: { $ref: '../../node_modules/@lbdistrictscouts/survey-engine/schemas/compiled-survey.v1.json' }
+                uploadedBy: { $ref: '#/components/schemas/UserId' }
+              required: [sourceYaml, compiled, uploadedBy]
+              additionalProperties: false
+      responses:
+        '201':
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SurveyVersion' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [surveys]
+      operationId: listSurveyVersions
+      summary: List numbered versions
+      x-token: survey-admin
+      responses:
+        '200':
+          description: Versions, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions: { type: array, items: { $ref: '#/components/schemas/SurveyVersion' } }
+                required: [versions]
+                additionalProperties: false
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/surveys/{surveyId}/versions/{versionNumber}/approve:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+      - name: versionNumber
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    post:
+      tags: [surveys]
+      operationId: approveSurveyVersion
+      summary: Approve a version for the next build
+      x-token: survey-admin
+      requestBody:
+        $ref: '#/components/requestBodies/Actor'
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SurveyVersion' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/surveys/{surveyId}/open:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    post:
+      tags: [surveys]
+      operationId: openSurvey
+      summary: Freeze the approved fingerprint and open the survey
+      x-token: survey-admin
+      requestBody:
+        $ref: '#/components/requestBodies/Actor'
+      responses:
+        '200':
+          description: Opened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  surveyId: { $ref: '../schemas/tracked-link.v1.json#/$defs/surveyId' }
+                  status: { const: open }
+                  fingerprint: { $ref: '../schemas/answer-file.v1.json#/$defs/surveyVersion' }
+                  frozenAt: { type: string, format: date-time }
+                required: [surveyId, status, fingerprint, frozenAt]
+                additionalProperties: false
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/surveys/{surveyId}/settings:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    put:
+      tags: [surveys]
+      operationId: putSurveySettings
+      summary: Replace the settings and logos
+      x-token: survey-admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                settings: { $ref: '../../node_modules/@lbdistrictscouts/survey-engine/schemas/settings.v1.json' }
+                logos: { $ref: '#/components/schemas/Logos' }
+                updatedBy: { $ref: '#/components/schemas/UserId' }
+              required: [settings, logos, updatedBy]
+              additionalProperties: false
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingsRecord' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    get:
+      tags: [surveys]
+      operationId: getSurveySettings
+      summary: Current settings and logos
+      x-token: survey-admin
+      responses:
+        '200':
+          description: Current settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingsRecord' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/surveys/{surveyId}/build-data:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    get:
+      tags: [surveys]
+      operationId: getBuildData
+      summary: The approved version, settings and logos for a survey build
+      x-token: build
+      responses:
+        '200':
+          description: Build data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildData' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/survey-imports/{batchId}:
+    parameters:
+      - name: batchId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [imports]
+      operationId: importBatch
+      summary: Import a batch of answer and comment files
+      description: |
+        The body is newline-delimited JSON as defined in `import-request.v1.json`. Duplicate submission and comment IDs
+        are skipped without failing the batch. Repeating a batch changes nothing and returns the stored counts.
+      x-token: import
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema: { type: string, maxLength: 20971520 }
+      responses:
+        '200':
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: '../schemas/import-request.v1.json#/$defs/result' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/surveys/{surveyId}/releases:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    post:
+      tags: [results]
+      operationId: publishRelease
+      summary: Calculate results and publish a release if any group changed
+      x-token: import
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                final: { type: boolean, default: false }
+              additionalProperties: false
+      responses:
+        '200':
+          description: Calculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  published: { type: boolean, description: False when no group moved by 3 or more, or the last release was under 12 hours ago }
+                  releaseId: { type: ['string', 'null'] }
+                required: [published, releaseId]
+                additionalProperties: false
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/surveys/{surveyId}/comments:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+      - name: task
+        in: query
+        required: true
+        schema: { const: none }
+    get:
+      tags: [comments]
+      operationId: listCommentsWithoutTask
+      summary: Comments that have no review task yet
+      description: Returns IDs and audiences only, never comment text.
+      x-token: comments
+      responses:
+        '200':
+          description: Comments without a task
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string, format: uuid }
+                        audience: { enum: [young-person, adult] }
+                        questionId: { $ref: '../schemas/answer-file.v1.json#/$defs/questionId' }
+                      required: [id, audience, questionId]
+                      additionalProperties: false
+                required: [comments]
+                additionalProperties: false
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/comments/{commentId}:
+    parameters:
+      - $ref: '#/components/parameters/CommentId'
+    get:
+      tags: [comments]
+      operationId: getComment
+      summary: Comment text, while it has no decision
+      description: Returns 410 once a decision is recorded, so other reviewers no longer see the text.
+      x-token: comments
+      responses:
+        '200':
+          description: The comment
+          headers:
+            Cache-Control:
+              schema: { const: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  questionId: { $ref: '../schemas/answer-file.v1.json#/$defs/questionId' }
+                  audience: { enum: [young-person, adult] }
+                  source: { enum: [open, tracked] }
+                  submittedOn: { type: string, format: date }
+                  text: { type: string, maxLength: 1000 }
+                required: [id, questionId, audience, source, submittedOn, text]
+                additionalProperties: false
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Decided' }
+
+  /api/v1/comments/{commentId}/task:
+    parameters:
+      - $ref: '#/components/parameters/CommentId'
+    put:
+      tags: [comments]
+      operationId: recordCommentTask
+      summary: Record that a review task exists
+      x-token: comments
+      responses:
+        '204': { description: Recorded. Repeating it changes nothing }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/comments/{commentId}/decision:
+    parameters:
+      - $ref: '#/components/parameters/CommentId'
+    post:
+      tags: [comments]
+      operationId: decideComment
+      summary: Approve or deny a comment
+      description: The first decision wins. A second decision receives 409 with the recorded decision.
+      x-token: comments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                decision: { enum: [approved, denied] }
+                decidedBy: { $ref: '#/components/schemas/UserId' }
+              required: [decision, decidedBy]
+              additionalProperties: false
+      responses:
+        '200':
+          description: Recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Decision' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Already decided
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Decision' }
+
+  /api/v1/surveys/{surveyId}/removals:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    post:
+      tags: [surveys]
+      operationId: applyRemoval
+      summary: Preview or apply spam removal for one day and source
+      description: With `preview` true nothing changes and the counts are returned. Removed responses are excluded from later releases.
+      x-token: survey-admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                submittedOn: { type: string, format: date }
+                source: { enum: [open, tracked] }
+                preview: { type: boolean }
+                requestedBy: { $ref: '#/components/schemas/UserId' }
+              required: [submittedOn, source, preview, requestedBy]
+              additionalProperties: false
+      responses:
+        '200':
+          description: Counts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RemovalCounts' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [surveys]
+      operationId: undoRemoval
+      summary: Undo a removal, possible until the survey closes
+      x-token: survey-admin
+      parameters:
+        - name: submittedOn
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: source
+          in: query
+          required: true
+          schema: { enum: [open, tracked] }
+      responses:
+        '200':
+          description: Restored counts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RemovalCounts' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/surveys/{surveyId}/close-down-evidence:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    post:
+      tags: [surveys]
+      operationId: recordCloseDownEvidence
+      summary: Record one close-down step
+      x-token: survey-admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stage: { enum: [reject-submissions, final-import, finish-reviews, final-release, final-email, delete-link-records, expire-results] }
+                store: { type: string, maxLength: 200, description: 'The store acted on, such as an S3 prefix or secret name. Never answers, comments, UUIDs or names' }
+                itemCount: { type: integer, minimum: 0 }
+                outcome: { enum: [succeeded, failed, skipped] }
+                approvedBy: { oneOf: [{ $ref: '#/components/schemas/UserId' }, { type: 'null' }] }
+              required: [stage, store, itemCount, outcome, approvedBy]
+              additionalProperties: false
+      responses:
+        '201': { description: Recorded }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/surveys/{surveyId}/analyst-data:
+    parameters:
+      - $ref: '#/components/parameters/SurveyId'
+    get:
+      tags: [results]
+      operationId: getAnalystData
+      summary: Published releases and approved comments, for the data-viz build
+      x-token: results-viewer
+      responses:
+        '200':
+          description: Analyst data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current: { oneOf: [{ $ref: '../schemas/results-release.v1.json' }, { type: 'null' }] }
+                  releaseIds: { type: array, items: { type: string } }
+                  approvedComments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        questionId: { $ref: '../schemas/answer-file.v1.json#/$defs/questionId' }
+                        audience: { enum: [young-person, adult] }
+                        submittedOn: { type: string, format: date }
+                        text: { type: string, maxLength: 1000 }
+                      required: [questionId, audience, submittedOn, text]
+                      additionalProperties: false
+                required: [current, releaseIds, approvedComments]
+                additionalProperties: false
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    serviceToken:
+      type: http
+      scheme: bearer
+      description: A scoped service token. Scopes are listed in the description above and in each operation's x-token.
+
+  parameters:
+    SurveyId:
+      name: surveyId
+      in: path
+      required: true
+      schema: { $ref: '../schemas/tracked-link.v1.json#/$defs/surveyId' }
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  requestBodies:
+    Actor:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              actedBy: { $ref: '#/components/schemas/UserId' }
+            required: [actedBy]
+            additionalProperties: false
+
+  schemas:
+    UserId:
+      description: A DistrictWorkflow user ID. Never a name or email address
+      type: string
+      format: uuid
+
+    SurveyVersion:
+      type: object
+      properties:
+        surveyId: { $ref: '../schemas/tracked-link.v1.json#/$defs/surveyId' }
+        versionNumber: { type: integer, minimum: 1 }
+        fingerprint: { $ref: '../schemas/answer-file.v1.json#/$defs/surveyVersion' }
+        status: { enum: [draft, approved, superseded] }
+        approvedAt: { type: ['string', 'null'], format: date-time }
+        frozenAt: { type: ['string', 'null'], format: date-time }
+      required: [surveyId, versionNumber, fingerprint, status, approvedAt, frozenAt]
+      additionalProperties: false
+
+    Logos:
+      type: object
+      properties:
+        light: { $ref: '#/components/schemas/Logo' }
+        dark: { $ref: '#/components/schemas/Logo' }
+      required: [light, dark]
+      additionalProperties: false
+
+    Logo:
+      type: object
+      properties:
+        contentType: { enum: [image/svg+xml, image/png, image/webp] }
+        base64: { type: string, maxLength: 1400000, contentEncoding: base64 }
+      required: [contentType, base64]
+      additionalProperties: false
+
+    SettingsRecord:
+      type: object
+      properties:
+        settings: { $ref: '../../node_modules/@lbdistrictscouts/survey-engine/schemas/settings.v1.json' }
+        logos: { $ref: '#/components/schemas/Logos' }
+        approvedAt: { type: ['string', 'null'], format: date-time }
+      required: [settings, logos, approvedAt]
+      additionalProperties: false
+
+    BuildData:
+      type: object
+      properties:
+        schemaVersion: { const: '1.0' }
+        surveyId: { $ref: '../schemas/tracked-link.v1.json#/$defs/surveyId' }
+        versionNumber: { type: integer, minimum: 1 }
+        compiled: { $ref: '../../node_modules/@lbdistrictscouts/survey-engine/schemas/compiled-survey.v1.json' }
+        settings: { $ref: '../../node_modules/@lbdistrictscouts/survey-engine/schemas/settings.v1.json' }
+        logos: { $ref: '#/components/schemas/Logos' }
+      required: [schemaVersion, surveyId, versionNumber, compiled, settings, logos]
+      additionalProperties: false
+
+    Decision:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        decision: { enum: [approved, denied] }
+        decidedBy: { $ref: '#/components/schemas/UserId' }
+        decidedAt: { type: string, format: date-time }
+      required: [id, decision, decidedBy, decidedAt]
+      additionalProperties: false
+
+    RemovalCounts:
+      type: object
+      properties:
+        submittedOn: { type: string, format: date }
+        source: { enum: [open, tracked] }
+        responses: { type: integer, minimum: 0 }
+        comments: { type: integer, minimum: 0 }
+        applied: { type: boolean }
+      required: [submittedOn, source, responses, comments, applied]
+      additionalProperties: false
+
+    Problem:
+      type: object
+      properties:
+        error: { type: string }
+        detail: { type: string }
+      required: [error]
+
+  responses:
+    BadRequest:
+      description: The body does not match its schema
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorised:
+      description: No valid service token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: The token's scope does not include this route
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: No such survey, version or comment
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: The request conflicts with the survey's state, such as a new fingerprint after opening
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Decided:
+      description: The comment has a decision, so its text is no longer available
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unavailable:
+      description: The results bucket could not be written. Older results remain visible
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }

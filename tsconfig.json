@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -13,22 +13,32 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "noUncheckedIndexedAccess": true,
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom/vitest"],
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
+      "@/components/ui/*": ["./src/vendor/alignui/*"],
+      "@/utils/tv": ["./src/ui/lib/tv.ts"],
+      "@/utils/*": ["./src/vendor/alignui/utils/*"],
+      "@/tailwind.config": ["./src/vendor/alignui/tailwind-tokens.ts"],
       "@/*": ["./src/*"]
     }
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "functions/**/*.ts",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "*.config.ts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "out", "dist", "infra"]
 }

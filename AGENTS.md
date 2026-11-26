@@ -10,20 +10,44 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # district-survey
 
-A React app built with Next.js (App Router), TypeScript and Tailwind CSS, deployed as a fully static site.
+The district survey: a static Next.js survey site, two AWS Lambda functions, the survey Terraform module and
+the contracts shared with DistrictWorkflow and DistrictStatistics. The design is
+`docs/designs/district_survey.md`.
 
 ## Package manager
 
 Use Yarn through Corepack. The version is pinned by `packageManager` in `package.json`. Never use npm, npx or pnpm, and never commit a `package-lock.json`.
 
+The survey engine, `@lbdistrictscouts/survey-engine`, lives in `DistrictWorkflow/packages/survey-engine`. Until
+it is published to GitHub Packages it is a `file:` dependency on a sibling checkout. After changing the engine,
+run `corepack yarn workspace @lbdistrictscouts/survey-engine build` in DistrictWorkflow, then `yarn install` here.
+
 ## Commands
 
-- `yarn dev`: start the development server on port 3000
-- `yarn build`: export the static site to `out/`
-- `yarn lint`: run ESLint
-- `yarn typecheck`: check types
+- `yarn dev`: the survey site on port 3000, with example build data
+- `yarn dev:all`: the site, the local Lambda server on 8787 and the results proxy on 8788
+- `yarn build`: build data, then export the static site to `out/` with inline scripts moved into files
+- `yarn build:functions`: bundle each Lambda into `dist/functions/`
+- `yarn lint`, `yarn typecheck`
+- `yarn test`, `yarn test:coverage`, `yarn test:mutation`
+- `yarn test:e2e`, `yarn test:a11y` (after `yarn build`), `yarn test:stack` (with Moto in Docker)
+- `yarn survey:validate <file> [--previous <file>] [--settings <file>]`
+- `yarn contracts:lint`, `yarn contracts:types`
+- `yarn secrets:create --env <local|test|prod> --generate|--store`
 
-Run `yarn lint`, `yarn typecheck` and `yarn build` before calling a change finished.
+Run `yarn lint`, `yarn typecheck`, `yarn test:coverage` and `yarn build` before calling a change finished. For
+`infra/terraform`, run `terraform fmt -check -recursive` and `terraform test`.
+
+## The two-Lambda boundary
+
+- The **response Lambda** (`functions/response`) saves answers. It never receives an invite UUID or a tracked link.
+- The **tracking Lambda** (`functions/tracking`) handles tracked links, receipts and results access. It never receives answers.
+- Neither imports the other's code (ESLint enforces this), each lists only its own secrets, and
+  `tests/functions/bundle-separation.test.ts` fails if either bundle contains the other's code or secret names.
+- Stored answer and comment files hold only the fields in `contracts/schemas/answer-file.v1.json` and
+  `comment-file.v1.json`. `tests/functions/stored-fields.test.ts` fails on any other field.
+- Each request writes one log entry with only the fields in `allowedLogFields` in `functions/shared/logger.ts`.
+  Never log answers, tokens, UUIDs, IP addresses, user agents or error messages.
 
 ## Static export constraints
 
@@ -40,5 +64,12 @@ Server Components run only at build time. Anything that happens at runtime, incl
 ## Layout
 
 - `src/app/`: routes, layouts and global styles
+- `src/components/survey/`: the survey screens
+- `src/ui/`: the only import point for AlignUI components, which are vendored unchanged in `src/vendor/alignui/`
+- `src/lib/`: browser storage, API calls, build data and contract types
+- `functions/`: the Lambdas, their shared services and the local server
+- `contracts/`: JSON Schemas, OpenAPI files and reviewed examples
+- `infra/terraform/`: the survey module and its tests
+- `examples/`: made-up surveys and settings. Public code never holds district names, domains or contacts
 - `public/`: static assets copied into the export
 - The `@/*` import alias maps to `src/*`

@@ -1,0 +1,17 @@
+# Made-up settings for pull request builds, tests and local development.
+# Real settings are stored in DistrictStatistics and fetched with the build data.
+surveyId: example-2027
+opensAt: "2027-03-01T09:00:00+00:00"
+closesAt: "2027-03-31T23:59:00+01:00"
+organisationName: Example Scout District
+siteUrl: https://survey.example.org
+resultsUrl: https://results.example.org
+helpContact:
+  text: If you need to talk to someone now, contact the district team or a leader you trust.
+  email: help@example.org
+privacyContact: privacy@example.org
+reviewerTag: survey-reviewer
+logos:
+  light: logo-light.svg
+  dark: logo-dark.svg
+  alt: Example Scout District

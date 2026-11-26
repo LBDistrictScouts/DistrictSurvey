@@ -1,0 +1,42 @@
+name: Release
+
+# A v* tag publishes the GitHub Release with the versioned contracts, then starts the production
+# deploy. Lambda bundles hold the approved survey, which only the cluster runner can fetch, so
+# deploy.yml builds and attaches them. This workflow assumes no AWS role.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Publish contracts and start the production deploy
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: write
+    defaults:
+      run:
+        working-directory: district-survey
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: district-survey
+          persist-credentials: false
+      - uses: ./district-survey/.github/actions/setup
+      - name: Bundle the contracts
+        run: |
+          yarn contracts:bundle
+          cp -R contracts/schemas contracts/examples dist/contracts/
+          tar -czf "dist/contracts-${GITHUB_REF_NAME}.tar.gz" -C dist contracts
+          (cd dist && sha256sum "contracts-${GITHUB_REF_NAME}.tar.gz" > "contracts-${GITHUB_REF_NAME}.tar.gz.sha256")
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes "dist/contracts-${GITHUB_REF_NAME}.tar.gz" "dist/contracts-${GITHUB_REF_NAME}.tar.gz.sha256"
+      - name: Start the production deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref "$GITHUB_REF_NAME" -f environment=production

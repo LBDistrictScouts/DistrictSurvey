@@ -1,0 +1,27 @@
+extends: ["spectral:oas"]
+rules:
+  # Every operation is named so generated clients and contract tests can refer to it.
+  operation-operationId: error
+  operation-description: off
+  operation-tag-defined: error
+  info-contact: off
+  # Every error response must use one of the listed codes.
+  survey-api-error-catalogue:
+    description: The survey API lists a message and action for every error code
+    given: "$.x-error-catalogue[*]"
+    severity: error
+    then:
+      - field: message
+        function: truthy
+      - field: action
+        function: truthy
+      - field: status
+        function: truthy
+  no-server-urls-with-real-domains:
+    description: Contracts use example.org, not district domains
+    given: "$.servers[*].url"
+    severity: error
+    then:
+      function: pattern
+      functionOptions:
+        match: "^https://[a-z0-9.-]*example\\.org$"

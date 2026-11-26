@@ -39,3 +39,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# survey build data, written by `yarn build-data`
+/.build-data/
+/public/brand/
+
+# built Lambda bundles and contract releases
+/dist/
+
+# test output
+/test-results/
+/playwright-report/
+/reports/
+/.stryker-tmp/
+
+# local secrets, written by `yarn secrets:create`
+/.local/
+*.secrets.json
+
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.example.tfvars
+.terraform.lock.hcl
+crash.log

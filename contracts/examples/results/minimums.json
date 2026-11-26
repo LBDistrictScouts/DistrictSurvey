@@ -1,0 +1,340 @@
+{
+  "$comment": "Reviewed results cases. Each step adds or removes responses, then a release is calculated at its time. DistrictStatistics' SurveyResultsCalculatorTest reproduces every expected value. Rules: groups below 6 are hidden; figures move only after 3 more answers and at most every 12 hours; shown counts round down to a multiple of 3; percentages round half up to the nearest 5% below 100 responses, then 1%; a person with several roles counts in each matching group.",
+  "surveyId": "example-2027",
+  "cases": [
+    {
+      "name": "A group appears at 6 and a breakdown group stays hidden below 6",
+      "question": {
+        "questionId": "support",
+        "type": "scale",
+        "min": 1,
+        "max": 5
+      },
+      "breakdowns": [
+        {
+          "questionId": "adult-roles",
+          "options": [
+            "parent",
+            "volunteer",
+            "network"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "at": "2027-03-02T09:00:00Z",
+          "add": [
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-01",
+              "answers": {
+                "support": 5,
+                "adult-roles": [
+                  "volunteer"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-01",
+              "answers": {
+                "support": 5,
+                "adult-roles": [
+                  "volunteer"
+                ]
+              }
+            },
+            {
+              "source": "open",
+              "submittedOn": "2027-03-01",
+              "answers": {
+                "support": 4,
+                "adult-roles": [
+                  "parent"
+                ]
+              }
+            },
+            {
+              "source": "open",
+              "submittedOn": "2027-03-01",
+              "answers": {
+                "support": 4,
+                "adult-roles": [
+                  "parent",
+                  "volunteer"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-01",
+              "answers": {
+                "support": 3,
+                "adult-roles": [
+                  "volunteer"
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "published": true,
+            "groups": [
+              {
+                "breakdown": null,
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "parent"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "volunteer"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "network"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              }
+            ]
+          }
+        },
+        {
+          "at": "2027-03-02T21:00:00Z",
+          "add": [
+            {
+              "source": "open",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 1,
+                "adult-roles": [
+                  "parent",
+                  "volunteer"
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "published": true,
+            "groups": [
+              {
+                "breakdown": null,
+                "hidden": false,
+                "shownCount": 6,
+                "percentages": {
+                  "1": 15,
+                  "2": 0,
+                  "3": 15,
+                  "4": 35,
+                  "5": 35
+                }
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "parent"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "volunteer"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "network"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Multiple roles count in each matching group, and percentages round to 5%",
+      "question": {
+        "questionId": "support",
+        "type": "scale",
+        "min": 1,
+        "max": 5
+      },
+      "breakdowns": [
+        {
+          "questionId": "adult-roles",
+          "options": [
+            "parent",
+            "volunteer",
+            "network"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "at": "2027-03-03T09:00:00Z",
+          "add": [
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 5,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 5,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 4,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 4,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 4,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 2,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            },
+            {
+              "source": "tracked",
+              "submittedOn": "2027-03-02",
+              "answers": {
+                "support": 1,
+                "adult-roles": [
+                  "volunteer",
+                  "network"
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "published": true,
+            "groups": [
+              {
+                "breakdown": null,
+                "hidden": false,
+                "shownCount": 6,
+                "percentages": {
+                  "1": 15,
+                  "2": 15,
+                  "3": 0,
+                  "4": 45,
+                  "5": 30
+                }
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "parent"
+                },
+                "hidden": true,
+                "shownCount": null,
+                "percentages": null
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "volunteer"
+                },
+                "hidden": false,
+                "shownCount": 6,
+                "percentages": {
+                  "1": 15,
+                  "2": 15,
+                  "3": 0,
+                  "4": 45,
+                  "5": 30
+                }
+              },
+              {
+                "breakdown": {
+                  "questionId": "adult-roles",
+                  "optionId": "network"
+                },
+                "hidden": false,
+                "shownCount": 6,
+                "percentages": {
+                  "1": 15,
+                  "2": 15,
+                  "3": 0,
+                  "4": 45,
+                  "5": 30
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+name: Deploy
+
+# Push to main deploys to test. A release tag, started by release.yml or by hand, deploys to production
+# after approval in the protected production environment. Builds run on the cluster runner named by
+# SURVEY_RUNNER_LABEL, the only place DistrictStatistics' build data can be read. Pull requests never
+# reach this workflow.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Where to deploy
+        type: choice
+        options: [test, production]
+        default: test
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.event_name == 'push' && 'test' || inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event_name == 'push' && 'test' || inputs.environment }}
+    runs-on: ${{ vars.SURVEY_RUNNER_LABEL }}
+    environment: ${{ github.event_name == 'push' && 'test' || inputs.environment }}
+    permissions:
+      contents: write
+      id-token: write
+      packages: read
+    defaults:
+      run:
+        working-directory: district-survey
+    env:
+      SURVEY_ENVIRONMENT: ${{ github.event_name == 'push' && 'test' || (inputs.environment == 'production' && 'prod' || 'test') }}
+    steps:
+      - name: Production deploys only from a release tag
+        if: inputs.environment == 'production' && !startsWith(github.ref, 'refs/tags/v')
+        working-directory: .
+        run: |
+          echo "Production deploys must run on a v* tag, not ${GITHUB_REF}." >&2
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: district-survey
+          persist-credentials: false
+      - uses: ./district-survey/.github/actions/setup
+
+      - name: Fetch the approved survey from DistrictStatistics
+        env:
+          DATA_CORE_URL: ${{ vars.DATA_CORE_URL }}
+          SURVEY_ID: ${{ vars.SURVEY_ID }}
+          SURVEY_BUILD_TOKEN: ${{ secrets.SURVEY_BUILD_TOKEN }}
+        run: yarn build-data
+
+      - name: Build the site and Lambdas
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          BUILD_ID: ${{ github.sha }}
+        run: |
+          yarn build
+          yarn build:functions
+
+      - name: The site and the response Lambda use the same survey
+        run: |
+          expected=$(node -p "require('./.build-data/build-data.json').compiled.fingerprint")
+          bundled=$(node -p "require('./dist/functions/response/build-info.json').fingerprint")
+          grep -q "$expected" out/survey.html
+          test "$expected" = "$bundled"
+          echo "Fingerprint $expected"
+
+      - uses: aws-actions/configure-aws-credentials@45666896f5d8e0f10ae255413f3a4cdd03bdc8f5 # v6.3.1
+        with:
+          role-to-assume: ${{ vars.SURVEY_DEPLOY_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - name: Upload the Lambdas
+        env:
+          FUNCTION_PREFIX: district-survey-${{ env.SURVEY_ENVIRONMENT }}
+        run: |
+          for name in response tracking; do
+            (cd "dist/functions/$name" && zip -qr "../$name.zip" index.mjs)
+            aws lambda update-function-code --function-name "$FUNCTION_PREFIX-$name" --zip-file "fileb://dist/functions/$name.zip" --output text --query LastUpdateStatus
+            aws lambda wait function-updated --function-name "$FUNCTION_PREFIX-$name"
+          done
+
+      - name: Upload the site
+        env:
+          SITE_BUCKET: ${{ vars.SURVEY_SITE_BUCKET }}
+        run: |
+          aws s3 sync out/_next "s3://$SITE_BUCKET/_next" --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync out "s3://$SITE_BUCKET" --delete --exclude "_next/*" --cache-control "public, max-age=60"
+
+      - name: Invalidate CloudFront
+        env:
+          DISTRIBUTION_ID: ${{ vars.SURVEY_DISTRIBUTION_ID }}
+        run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*" --output text --query Invalidation.Id
+
+      - name: Attach the Lambda bundles to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/functions/response.zip dist/functions/tracking.zip --clobber

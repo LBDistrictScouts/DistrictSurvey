@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/signed-values.v1.json",
+  "title": "Signed values",
+  "description": "Tracked passes, receipts and results tokens. Each is base64url(JSON payload) + '.' + base64url(Ed25519 signature of the encoded payload). The signature is 64 bytes, so 86 characters.",
+  "$defs": {
+    "signedValue": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{86}$",
+      "maxLength": 600
+    },
+    "trackedPass": {
+      "description": "Signed by the tracking Lambda, checked by the response Lambda. Expires at closing + 1 hour.",
+      "type": "object",
+      "properties": {
+        "v": { "const": 1 },
+        "s": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+        "l": { "$ref": "#/$defs/linkRef" },
+        "exp": { "$ref": "#/$defs/unixTime" }
+      },
+      "required": ["v", "s", "l", "exp"],
+      "additionalProperties": false
+    },
+    "receipt": {
+      "description": "Signed by the response Lambda for adult open-link responses, checked by the tracking Lambda. Expires at closing + 1 hour.",
+      "type": "object",
+      "properties": {
+        "v": { "const": 1 },
+        "s": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+        "r": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22}$", "description": "16 random bytes, base64url" },
+        "exp": { "$ref": "#/$defs/unixTime" }
+      },
+      "required": ["v", "s", "r", "exp"],
+      "additionalProperties": false
+    },
+    "resultsToken": {
+      "description": "Signed by DistrictWorkflow or the tracking Lambda, checked by the tracking Lambda before it issues results cookies. Expires 3 months after closing.",
+      "type": "object",
+      "properties": {
+        "v": { "const": 1 },
+        "s": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+        "a": { "const": "volunteer" },
+        "exp": { "$ref": "#/$defs/unixTime" }
+      },
+      "required": ["v", "s", "a", "exp"],
+      "additionalProperties": false
+    },
+    "linkRef": {
+      "description": "base64url(HMAC-SHA-256(link reference key, surveyId + ':' + uuid)). Only the tracking Lambda holds the key.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$"
+    },
+    "unixTime": { "type": "integer", "minimum": 1700000000, "maximum": 4102444800 }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/intake-keys.v1.json",
+  "title": "Intake and used-record keys",
+  "description": "Object keys in the intake and used-records buckets. Every variable part is base64url(HMAC-SHA-256(...)), 43 characters, so keys reveal nothing and a retry reproduces the same key.",
+  "oneOf": [
+    { "$ref": "#/$defs/answerKey" },
+    { "$ref": "#/$defs/commentKey" },
+    { "$ref": "#/$defs/usedLinkKey" },
+    { "$ref": "#/$defs/usedReceiptKey" }
+  ],
+  "$defs": {
+    "answerKey": {
+      "description": "intake/answers/{fileKey}.json, fileKey = HMAC(file name key, submissionId)",
+      "type": "string",
+      "pattern": "^intake/answers/[A-Za-z0-9_-]{43}\\.json$"
+    },
+    "commentKey": {
+      "description": "intake/comments/{commentKey}.json, commentKey = HMAC(file name key, submissionId + ':' + questionId)",
+      "type": "string",
+      "pattern": "^intake/comments/[A-Za-z0-9_-]{43}\\.json$"
+    },
+    "usedLinkKey": {
+      "description": "links/{linkRef} in the used-records bucket. The body is the browser's retry secret hash (64 lower-case hex characters), or 'receipt' when an open-link receipt completed the link.",
+      "type": "string",
+      "pattern": "^links/[A-Za-z0-9_-]{43}$"
+    },
+    "usedReceiptKey": {
+      "description": "receipts/{HMAC(receipt record key, receiptId)} in the used-records bucket. The body is the linkRef the receipt completed, so a retried claim is recognised.",
+      "type": "string",
+      "pattern": "^receipts/[A-Za-z0-9_-]{43}$"
+    }
+  }
+}

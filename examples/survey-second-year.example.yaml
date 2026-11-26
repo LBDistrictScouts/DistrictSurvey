@@ -1,0 +1,149 @@
+# The made-up survey for the following year. It must validate and run with no code change.
+# It follows the structure of a real district survey.
+survey:
+  id: example-2028
+  title: Example district survey 2028
+  limits: { maxPaths: 512, maxQuestionsPerPath: 60 }
+
+reporting:
+  breakdowns: [age-group, section, adult-roles]
+
+blocks:
+  - id: about-you
+    title: About you
+    questions:
+      - id: age-group
+        type: single
+        text: Which best describes you?
+        options:
+          - { id: young-person, text: I'm in a Scout section, sets: [young-person], showIf: { none: [source:tracked] } }
+          - { id: adult, text: I'm an adult, sets: [adult], preselectIf: { all: [source:tracked] } }
+      - id: section
+        type: single
+        text: Which section are you in?
+        showIf: { all: [young-person] }
+        options:
+          - { id: beavers, text: Beavers, sets: [beavers] }
+          - { id: cubs, text: Cubs, sets: [cubs] }
+          - { id: scouts, text: Scouts, sets: [scouts] }
+          - { id: explorers, text: Explorers, sets: [explorers] }
+      - id: adult-roles
+        type: multiple
+        text: Which of these apply to you?
+        showIf: { all: [adult] }
+        options:
+          - { id: parent, text: Parent or carer, sets: [parent] }
+          - { id: volunteer, text: Volunteer, sets: [volunteer], preselectIf: { all: [source:tracked] } }
+          - { id: network, text: Scout Network member, sets: [network] }
+      - id: child-sections
+        type: multiple
+        text: Which sections are your children in?
+        showIf: { all: [parent] }
+        options:
+          - { id: squirrels, text: Squirrels }
+          - { id: beavers, text: Beavers }
+          - { id: cubs, text: Cubs }
+          - { id: scouts, text: Scouts }
+          - { id: explorers, text: Explorers }
+
+  - id: young-people
+    title: Your section
+    questions:
+      - id: enjoy
+        type: scale
+        text: How much do you enjoy your meetings?
+        showIf: { all: [young-person] }
+        min: 1
+        max: 5
+        minLabel: Not much
+        maxLabel: A lot
+      - id: favourite
+        type: single
+        text: What do you like best?
+        showIf: { any: [beavers, cubs] }
+        options:
+          - { id: games, text: Games }
+          - { id: outdoors, text: Being outdoors }
+          - { id: badges, text: Earning badges }
+      - id: say
+        type: scale
+        text: How much say do you get in what your section does?
+        showIf: { any: [scouts, explorers] }
+        min: 1
+        max: 5
+        minLabel: None
+        maxLabel: A lot
+      - id: young-help
+        type: panel
+        kind: help
+        showIf: { any: [scouts, explorers] }
+        text: Comments are not read straight away. If you need help now, talk to a leader or a trusted adult.
+      - id: young-comments
+        type: text
+        comment: true
+        maxLength: 500
+        text: Is there anything else you want to tell us?
+        showIf: { any: [scouts, explorers] }
+
+  - id: adults
+    title: Your experience
+    questions:
+      - id: communication-2028
+        type: scale
+        replaces: communication
+        text: How well do your section and the district keep you informed?
+        showIf: { any: [parent, volunteer] }
+        min: 1
+        max: 5
+        minLabel: Poorly
+        maxLabel: Very well
+      - id: value
+        type: single
+        text: Does Scouting offer good value for your family?
+        showIf: { all: [parent] }
+        options:
+          - { id: yes, text: 'Yes' }
+          - { id: mostly, text: Mostly }
+          - { id: no, text: 'No' }
+      - id: support
+        type: scale
+        text: How supported do you feel in your role?
+        showIf: { all: [volunteer] }
+        min: 1
+        max: 5
+        minLabel: Not supported
+        maxLabel: Very supported
+      - id: time
+        type: single
+        text: How many hours a week do you volunteer?
+        showIf: { all: [volunteer] }
+        options:
+          - { id: under-2, text: Under 2 }
+          - { id: 2-to-5, text: 2 to 5 }
+          - { id: over-5, text: Over 5 }
+      - id: training
+        type: single
+        text: Have you finished your required training?
+        showIf: { all: [volunteer] }
+        options:
+          - { id: yes, text: 'Yes' }
+          - { id: in-progress, text: In progress }
+          - { id: no, text: 'No' }
+      - id: network-activities
+        type: single
+        text: How often do you take part in Network activities?
+        showIf: { all: [network] }
+        options:
+          - { id: monthly, text: Monthly or more }
+          - { id: sometimes, text: A few times a year }
+          - { id: rarely, text: Rarely }
+      - id: adult-help
+        type: panel
+        kind: help
+        showIf: { all: [adult] }
+        text: Comments are not read straight away. If you need help now, contact the district team.
+      - id: adult-comments
+        type: text
+        comment: true
+        text: Is there anything else you want to tell us?
+        showIf: { all: [adult] }

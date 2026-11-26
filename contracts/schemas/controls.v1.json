@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/controls.v1.json",
+  "title": "Control parameters",
+  "description": "SSM String parameters written by DistrictWorkflow and read by both Lambdas, which cache them for at most 30 seconds so a change applies within 1 minute. A missing or unreadable parameter counts as false, so the survey fails closed.",
+  "type": "object",
+  "properties": {
+    "/district-survey/{environment}/controls/open": { "$ref": "#/$defs/switch", "description": "Accept open-link submissions" },
+    "/district-survey/{environment}/controls/tracked": { "$ref": "#/$defs/switch", "description": "Accept tracked-link submissions, starts, claims and declines" },
+    "/district-survey/{environment}/controls/survey": { "$ref": "#/$defs/switch", "description": "Accept anything at all. Off closes both link types" },
+    "/district-survey/{environment}/controls/results-cookies": { "$ref": "#/$defs/switch", "description": "Issue results cookies" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "switch": { "enum": ["true", "false"] },
+    "name": { "type": "string", "pattern": "^/district-survey/(test|prod|local)/controls/(open|tracked|survey|results-cookies)$" }
+  }
+}

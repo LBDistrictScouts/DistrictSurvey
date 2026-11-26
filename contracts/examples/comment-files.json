@@ -1,0 +1,30 @@
+{
+  "$comment": "Example comment files as the response Lambda writes them. They carry no submission ID.",
+  "files": [
+    {
+      "schemaVersion": "1.0",
+      "surveyId": "example-2027",
+      "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19",
+      "commentId": "5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a",
+      "questionId": "young-comments",
+      "audience": "young-person",
+      "source": "open",
+      "submittedOn": "2027-03-15",
+      "text": "More camping trips, please."
+    },
+    {
+      "schemaVersion": "1.0",
+      "surveyId": "example-2027",
+      "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19",
+      "commentId": "8e7d6c5b-4a3f-4e2d-9c1b-0a9f8e7d6c5b",
+      "questionId": "adult-comments",
+      "audience": "adult",
+      "source": "tracked",
+      "submittedOn": "2027-03-14",
+      "text": "The new training sessions were very helpful."
+    }
+  ],
+  "invalid": [
+    { "$comment": "A submission ID would join the comment to its response", "schemaVersion": "1.0", "surveyId": "example-2027", "surveyVersion": "sha256:2fc05930b1b74a9bff2a247c7ee20dcab0264a2a3e3cc4d518df4557ed79ca19", "commentId": "5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a", "submissionId": "3c2b1a0f-9e8d-4c7b-a6f5-4e3d2c1b0a9f", "questionId": "young-comments", "audience": "young-person", "source": "open", "submittedOn": "2027-03-15", "text": "Hello" }
+  ]
+}

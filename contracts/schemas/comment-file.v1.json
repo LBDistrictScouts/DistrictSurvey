@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/comment-file.v1.json",
+  "title": "Comment file",
+  "description": "One written comment, written by the response Lambda to intake/comments/{commentKey}.json. It carries no submission ID, so a comment cannot be joined to its response.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "surveyId": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+    "surveyVersion": { "$ref": "answer-file.v1.json#/$defs/surveyVersion" },
+    "commentId": { "type": "string", "format": "uuid" },
+    "questionId": { "$ref": "answer-file.v1.json#/$defs/questionId" },
+    "audience": { "enum": ["young-person", "adult"], "description": "young-person if the response has the young-person tag, otherwise adult" },
+    "source": { "$ref": "answer-file.v1.json#/$defs/source" },
+    "submittedOn": { "$ref": "answer-file.v1.json#/$defs/date" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 1000 }
+  },
+  "required": ["schemaVersion", "surveyId", "surveyVersion", "commentId", "questionId", "audience", "source", "submittedOn", "text"],
+  "additionalProperties": false
+}

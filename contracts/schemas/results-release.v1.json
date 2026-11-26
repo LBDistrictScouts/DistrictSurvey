@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/results-release.v1.json",
+  "title": "Results release",
+  "description": "Written by DistrictStatistics to results-data/{surveyId}/releases/{releaseId}.json, with results-data/{surveyId}/current.json as a full copy of the latest. It holds grouped figures only. Groups below 6 people are hidden, shown counts are multiples of 3, and percentages are rounded to 5% below 100 responses, then 1%.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "surveyId": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+    "releaseId": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{4}Z-[a-z0-9]{6}$" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "final": { "type": "boolean" },
+    "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } }
+  },
+  "required": ["schemaVersion", "surveyId", "releaseId", "generatedAt", "final", "questions"],
+  "additionalProperties": false,
+  "$defs": {
+    "question": {
+      "type": "object",
+      "properties": {
+        "questionId": { "$ref": "answer-file.v1.json#/$defs/questionId" },
+        "type": { "enum": ["single", "multiple", "scale"] },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/group" }, "minItems": 1 }
+      },
+      "required": ["questionId", "type", "groups"],
+      "additionalProperties": false
+    },
+    "group": {
+      "type": "object",
+      "properties": {
+        "breakdown": {
+          "description": "null for everyone, or the breakdown question and option that define this group",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "properties": {
+                "questionId": { "$ref": "answer-file.v1.json#/$defs/questionId" },
+                "optionId": { "$ref": "answer-file.v1.json#/$defs/questionId" }
+              },
+              "required": ["questionId", "optionId"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "hidden": { "type": "boolean", "description": "True when fewer than 6 people in this group answered. Hidden groups carry no figures." },
+        "shownCount": { "type": ["integer", "null"], "minimum": 6, "multipleOf": 3 },
+        "percentages": {
+          "type": ["object", "null"],
+          "description": "Answer option ID, or scale point as a string, to a whole-number percentage",
+          "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      },
+      "required": ["breakdown", "hidden", "shownCount", "percentages"],
+      "additionalProperties": false,
+      "if": { "properties": { "hidden": { "const": true } } },
+      "then": { "properties": { "shownCount": { "type": "null" }, "percentages": { "type": "null" } } },
+      "else": { "properties": { "shownCount": { "type": "integer" }, "percentages": { "type": "object" } } }
+    }
+  }
+}

@@ -1,0 +1,438 @@
+openapi: 3.1.0
+info:
+  title: Survey APIs
+  version: 1.0.0
+  summary: The tracking and response Lambda routes called by the survey site and the results site.
+  description: |
+    Two Lambda functions sit behind one API Gateway HTTP API. The tracking Lambda handles invitation links
+    and never receives answers. The response Lambda saves answers and never receives an invite UUID.
+
+    Every response carries `Cache-Control: no-store`. CloudFront adds a secret origin header, and both
+    Lambdas refuse requests without it. Every error body names one of the codes in `x-error-catalogue`,
+    and the survey site shows that code's message and action.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://survey.example.org
+    description: Survey domain. The results access route is served on the results domain.
+tags:
+  - name: tracking
+    description: Tracking Lambda
+  - name: responses
+    description: Response Lambda
+
+x-error-catalogue:
+  survey_closed:
+    status: 409
+    message: This survey has closed, so we can't accept new answers.
+    action: Thank you for your interest. Results will be shared by the district.
+  version_changed:
+    status: 409
+    message: The survey has been updated since you started.
+    action: Reload the page to see the updated questions. You'll need to answer them again.
+  invalid_link:
+    status: 400
+    message: This invitation link isn't valid.
+    action: Open the link from your invitation email again. If it still doesn't work, ask the district team for a new one.
+  already_completed:
+    status: 409
+    message: A response has already been received for this invitation.
+    action: There's nothing more to do. Thank you for taking part.
+  invalid_answers:
+    status: 422
+    message: Some answers don't fit the questions you were shown.
+    action: Check the highlighted questions, then submit again.
+  verification_failed:
+    status: 403
+    message: We couldn't confirm that you're a person rather than an automated program.
+    action: Complete the check again, then submit. Your answers are still saved on this device.
+  rate_limited:
+    status: 429
+    message: We're receiving a lot of answers right now.
+    action: Wait a minute, then submit again. Your answers are still saved on this device.
+  temporarily_unavailable:
+    status: 503
+    message: We couldn't save your answers just now.
+    action: Your answers are still saved on this device. Try again in a few minutes.
+
+paths:
+  /api/v1/tracking/open:
+    post:
+      tags: [tracking]
+      operationId: openTrackedLink
+      summary: Check a tracked link
+      description: |
+        Returns a tracked pass, or `completed` with a results token when the link has already been used.
+        Opening a used link resends the `completed` message, so a task left open by a lost connection is completed.
+      requestBody:
+        $ref: '#/components/requestBodies/TrackedLink'
+      responses:
+        '200':
+          description: The link is valid
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/OpenReady'
+                  - $ref: '#/components/schemas/Completed'
+              examples:
+                ready:
+                  value: { status: ready, trackedPass: 'eyJ2IjoxfQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', closesAt: '2027-03-31T22:59:00Z' }
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '409': { $ref: '#/components/responses/SurveyClosed' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/tracking/start:
+    post:
+      tags: [tracking]
+      operationId: startTrackedLink
+      summary: Record that the volunteer pressed Start
+      requestBody:
+        $ref: '#/components/requestBodies/TrackedLink'
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '409': { $ref: '#/components/responses/SurveyClosed' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/tracking/complete:
+    post:
+      tags: [tracking]
+      operationId: completeTrackedLink
+      summary: Complete a tracked link after its response was saved
+      description: Confirms that `links/{linkRef}` exists, sends `completed` and returns a results token.
+      requestBody:
+        $ref: '#/components/requestBodies/TrackedLink'
+      responses:
+        '200':
+          description: The task will be completed
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Completed' }
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/tracking/claim:
+    post:
+      tags: [tracking]
+      operationId: claimReceipt
+      summary: Complete a tracked link with an open-link receipt
+      description: |
+        Used after the person confirms they already responded on this device. Each receipt completes one link.
+        Repeating the same claim for the same link succeeds again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token: { $ref: '../schemas/tracked-link.v1.json#/$defs/token' }
+                receipt: { $ref: '../schemas/signed-values.v1.json#/$defs/signedValue' }
+              required: [token, receipt]
+              additionalProperties: false
+      responses:
+        '200':
+          description: The task will be completed
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Completed' }
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/tracking/decline:
+    post:
+      tags: [tracking]
+      operationId: declineTrackedLink
+      summary: Stop reminders for this invitation
+      requestBody:
+        $ref: '#/components/requestBodies/TrackedLink'
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '409': { $ref: '#/components/responses/SurveyClosed' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/results-access:
+    post:
+      tags: [tracking]
+      operationId: resultsAccess
+      summary: Exchange a results token for results cookies
+      description: |
+        Served on the results domain. Sets `CloudFront-Policy`, `CloudFront-Signature` and
+        `CloudFront-Key-Pair-Id` for `/results-data/`, marked `Secure`, `HttpOnly` and `SameSite=Lax`.
+        Cookies last 7 days, or until the results token expires if sooner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token: { $ref: '../schemas/signed-values.v1.json#/$defs/signedValue' }
+              required: [token]
+              additionalProperties: false
+      responses:
+        '200':
+          description: Cookies issued
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+            Set-Cookie:
+              description: The three CloudFront signed cookies
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { const: ok }
+                  expiresAt: { type: string, format: date-time }
+                required: [status, expiresAt]
+                additionalProperties: false
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/SurveyClosed' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/responses/tracked:
+    post:
+      tags: [responses]
+      operationId: saveTrackedResponse
+      summary: Save a tracked response
+      description: |
+        Writes the answer file, then claims `links/{linkRef}` with the retry secret hash, then writes comment files.
+        A retry with the same submission ID and retry secret hash returns `saved` again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ResponseBase'
+                - type: object
+                  properties:
+                    trackedPass: { $ref: '../schemas/signed-values.v1.json#/$defs/signedValue' }
+                    retrySecretHash: { type: string, pattern: '^[0-9a-f]{64}$', description: SHA-256 of a random secret kept with the draft }
+                  required: [trackedPass, retrySecretHash]
+            examples:
+              volunteer:
+                value:
+                  surveyId: example-2027
+                  surveyVersion: 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+                  submissionId: 3f2b8a52-0c4e-4f7e-9b7a-8f9b3a1d2c4e
+                  retrySecretHash: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+                  trackedPass: 'eyJ2IjoxfQ.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+                  answers: { age-group: adult, adult-roles: [volunteer], support: 4 }
+      responses:
+        '200':
+          description: Saved
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { const: saved }
+                required: [status]
+                additionalProperties: false
+        '400': { $ref: '#/components/responses/InvalidLink' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '422': { $ref: '#/components/responses/InvalidAnswers' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/v1/responses/open:
+    post:
+      tags: [responses]
+      operationId: saveOpenResponse
+      summary: Save an open-link response after a Turnstile check
+      description: |
+        Adults receive a receipt, which a tracked link on the same device can claim later. Young people receive no receipt.
+        Each retry sends a new Turnstile token and the same submission ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ResponseBase'
+                - type: object
+                  properties:
+                    turnstileToken: { type: string, minLength: 1, maxLength: 2048 }
+                  required: [turnstileToken]
+      responses:
+        '200':
+          description: Saved
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { const: saved }
+                  receipt: { $ref: '../schemas/signed-values.v1.json#/$defs/signedValue' }
+                  receiptExpiresAt: { type: string, format: date-time }
+                required: [status]
+                additionalProperties: false
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '422': { $ref: '#/components/responses/InvalidAnswers' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+components:
+  headers:
+    NoStore:
+      description: Responses are never cached
+      schema: { const: no-store }
+
+  requestBodies:
+    TrackedLink:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token: { $ref: '../schemas/tracked-link.v1.json#/$defs/token' }
+            required: [token]
+            additionalProperties: false
+
+  schemas:
+    ResponseBase:
+      type: object
+      properties:
+        surveyId: { $ref: '../schemas/tracked-link.v1.json#/$defs/surveyId' }
+        surveyVersion: { $ref: '../schemas/answer-file.v1.json#/$defs/surveyVersion' }
+        submissionId: { type: string, format: uuid }
+        answers:
+          type: object
+          propertyNames: { $ref: '../schemas/answer-file.v1.json#/$defs/questionId' }
+          additionalProperties: { $ref: '../schemas/answer-file.v1.json#/$defs/answerValue' }
+          maxProperties: 200
+      required: [surveyId, surveyVersion, submissionId, answers]
+
+    OpenReady:
+      type: object
+      properties:
+        status: { const: ready }
+        trackedPass: { $ref: '../schemas/signed-values.v1.json#/$defs/signedValue' }
+        closesAt: { type: string, format: date-time }
+      required: [status, trackedPass, closesAt]
+      additionalProperties: false
+
+    Completed:
+      type: object
+      properties:
+        status: { const: completed }
+        resultsToken: { $ref: '../schemas/signed-values.v1.json#/$defs/signedValue' }
+      required: [status, resultsToken]
+      additionalProperties: false
+
+    Ok:
+      type: object
+      properties:
+        status: { const: ok }
+      required: [status]
+      additionalProperties: false
+
+    ErrorCode:
+      enum: [survey_closed, version_changed, invalid_link, already_completed, invalid_answers, verification_failed, rate_limited, temporarily_unavailable]
+
+    Error:
+      type: object
+      properties:
+        error: { $ref: '#/components/schemas/ErrorCode' }
+        questionIds:
+          description: For invalid_answers, the questions whose answers were rejected
+          type: array
+          items: { $ref: '../schemas/answer-file.v1.json#/$defs/questionId' }
+      required: [error]
+      additionalProperties: false
+
+  responses:
+    Ok:
+      description: Recorded
+      headers:
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Ok' }
+    InvalidLink:
+      description: invalid_link. The link, pass, receipt or token is malformed, forged, expired or for another survey
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: invalid_link }
+    Forbidden:
+      description: verification_failed. Turnstile rejected the request, or the request did not come through CloudFront
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: verification_failed }
+    SurveyClosed:
+      description: survey_closed. Outside the survey window, or closed by a control
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: survey_closed }
+    Conflict:
+      description: survey_closed, version_changed or already_completed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: already_completed }
+    InvalidAnswers:
+      description: invalid_answers. An answer does not belong on the path calculated from the other answers
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: invalid_answers, questionIds: [support] }
+    TooLarge:
+      description: invalid_answers. The body is larger than 64 KiB
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: invalid_answers }
+    RateLimited:
+      description: rate_limited
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: rate_limited }
+    Unavailable:
+      description: temporarily_unavailable. A storage, queue or verification service failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: temporarily_unavailable }

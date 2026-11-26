@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/tracked-link.v1.json",
+  "title": "Tracked link",
+  "description": "A personal invitation link. DistrictWorkflow signs the token with the tracked link key (HMAC-SHA-256) and the tracking Lambda checks it. The token travels in the URL fragment, so it never reaches CloudFront logs: https://{surveyDomain}/invite#invite={token}.",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "pattern": "^https://[a-z0-9.-]+(:[0-9]+)?/invite#invite=[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$"
+    },
+    "token": { "$ref": "#/$defs/token" },
+    "payload": { "$ref": "#/$defs/payload" }
+  },
+  "required": ["url", "token", "payload"],
+  "additionalProperties": false,
+  "$defs": {
+    "token": {
+      "description": "base64url(JSON payload) + '.' + base64url(HMAC-SHA-256 of the encoded payload). The signature is 32 bytes, so 43 characters.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$",
+      "maxLength": 400
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "v": { "const": 1 },
+        "s": { "$ref": "#/$defs/surveyId" },
+        "u": { "type": "string", "format": "uuid" }
+      },
+      "required": ["v", "s", "u"],
+      "additionalProperties": false
+    },
+    "surveyId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    }
+  }
+}

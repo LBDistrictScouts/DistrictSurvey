@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LBDistrictScouts/DistrictSurvey/contracts/schemas/completion-message.v1.json",
+  "title": "Completion message",
+  "description": "Sent by the tracking Lambda to the completion queue and read by DistrictWorkflow. Messages carry no timestamp, answers or receipt.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "surveyId": { "$ref": "tracked-link.v1.json#/$defs/surveyId" },
+    "inviteUuid": { "type": "string", "format": "uuid" },
+    "event": { "enum": ["started", "completed", "declined"] }
+  },
+  "required": ["schemaVersion", "surveyId", "inviteUuid", "event"],
+  "additionalProperties": false
+}

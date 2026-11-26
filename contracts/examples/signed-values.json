@@ -1,0 +1,47 @@
+{
+  "$comment": "Worked examples of each signed value. These keys are published examples and must never be used in any environment.",
+  "keys": {
+    "trackedLinkKey": "0Kmq4cZoxuFUBbIVZRTPHFwLNHnK+PRu21GmOMJZPn0=",
+    "linkReferenceKey": "BgGeaem0pWN1qske+QTJzwK7rw/++pNGAaNBl1c0Yj0=",
+    "trackedPassPublicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAzecsrY1GOiipuUuRh2ukORLKJZWZ1H6UZzJyM4Bfy/4=\n-----END PUBLIC KEY-----\n",
+    "receiptPublicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAfZQfyAidrKruE1tz2w1MucR+xhlTHfhxFFlL8U+5hpg=\n-----END PUBLIC KEY-----\n",
+    "resultsTokenPublicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAYMm4Z0HJmdZF8rujTO3W1z0SiPSewsSV2SDh3xjzZe0=\n-----END PUBLIC KEY-----\n"
+  },
+  "trackedLink": {
+    "url": "https://survey.example.org/invite#invite=eyJ2IjoxLCJzIjoiZXhhbXBsZS0yMDI3IiwidSI6IjZmMWMyYTllLTRiN2QtNGUzYS05YzVmLTJkOGIxYTdlM2Y2MCJ9.uf6YRXmWuGOVchduikUGnuU3M6kJITGpI8idar-hpJ0",
+    "token": "eyJ2IjoxLCJzIjoiZXhhbXBsZS0yMDI3IiwidSI6IjZmMWMyYTllLTRiN2QtNGUzYS05YzVmLTJkOGIxYTdlM2Y2MCJ9.uf6YRXmWuGOVchduikUGnuU3M6kJITGpI8idar-hpJ0",
+    "payload": {
+      "v": 1,
+      "s": "example-2027",
+      "u": "6f1c2a9e-4b7d-4e3a-9c5f-2d8b1a7e3f60"
+    },
+    "linkRef": "iq8b18infd4NLqU1bZHyuz-mhVjVdv5sGEqMK2HhjNY"
+  },
+  "trackedPass": {
+    "value": "eyJ2IjoxLCJzIjoiZXhhbXBsZS0yMDI3IiwibCI6ImlxOGIxOGluZmQ0TkxxVTFiWkh5dXotbWhWalZkdjVzR0VxTUsySGhqTlkiLCJleHAiOjE4MDY1Mzc1NDB9.d33V57wUdKuQpbNfxW-paVVJxfysY6iNklMSiVe-ykGI-LnAUm5Gd2a24swXRj-DLOFfQJviJoK2SCrGe8HUDw",
+    "payload": {
+      "v": 1,
+      "s": "example-2027",
+      "l": "iq8b18infd4NLqU1bZHyuz-mhVjVdv5sGEqMK2HhjNY",
+      "exp": 1806537540
+    }
+  },
+  "receipt": {
+    "value": "eyJ2IjoxLCJzIjoiZXhhbXBsZS0yMDI3IiwiciI6IjRhSHV4anl2LUlkYTEzeTRPQUVXQ2ciLCJleHAiOjE4MDY1Mzc1NDB9.zxacvS18y-mJvz_kfnZGYrxv9om2Ir8F_ZbJMFtobiTGzbjelgk-pj3HJskQNP5GHr_kXgg4p5W2X2M81t1GAw",
+    "payload": {
+      "v": 1,
+      "s": "example-2027",
+      "r": "4aHuxjyv-Ida13y4OAEWCg",
+      "exp": 1806537540
+    }
+  },
+  "resultsToken": {
+    "value": "eyJ2IjoxLCJzIjoiZXhhbXBsZS0yMDI3IiwiYSI6InZvbHVudGVlciIsImV4cCI6MTgxNDM5NjM0MH0.ITli2d3NP8ihCPYsCLUDabWthYAESi83co5mplv240TAMxBHaxLBoqzKqCPWlgOi_K28GjSSY5hbI6DW6zyfBQ",
+    "payload": {
+      "v": 1,
+      "s": "example-2027",
+      "a": "volunteer",
+      "exp": 1814396340
+    }
+  }
+}
