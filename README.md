@@ -19,8 +19,9 @@ DistrictWorkflow's `packages/survey-engine`.
 
 ```bash
 corepack enable
-# The engine is a file dependency on a DistrictWorkflow checkout beside this one, until it is published.
-(cd ../DistrictWorkflow && corepack yarn install && corepack yarn workspace @lbdistrictscouts/survey-engine package)
+# The survey engine comes from GitHub Packages, which needs a token with read:packages.
+gh auth refresh -h github.com -s read:packages   # once
+export GITHUB_TOKEN=$(gh auth token)
 yarn install
 yarn dev
 ```
