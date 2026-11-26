@@ -34,8 +34,10 @@ jobs:
       - run: yarn contracts:lint
       - name: Generated contract types are current
         run: yarn contracts:types && git diff --exit-code -- src/lib/contracts/types.ts
-      - name: Survey example validates
-        run: yarn survey:validate examples/survey-second-year.example.yaml --previous examples/survey.example.yaml --settings examples/settings.example.yaml
+      - name: Survey examples validate
+        run: |
+          yarn survey:validate examples/survey.example.yaml --settings examples/settings.example.yaml
+          yarn survey:validate examples/survey-second-year.example.yaml --previous examples/survey.example.yaml
       - run: yarn test:coverage --reporter=default --reporter=json --outputFile.json=reports/vitest.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
