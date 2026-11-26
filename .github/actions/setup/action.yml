@@ -1,42 +1,21 @@
 name: Set up the survey repository
 description: >
-  Checks out DistrictWorkflow next to this repository and builds the survey engine, then installs
-  dependencies. The engine is a file dependency until DistrictWorkflow publishes it to GitHub Packages;
-  after that, this action only needs `yarn install --immutable`.
-
-inputs:
-  engine-ref:
-    description: The DistrictWorkflow ref holding the engine version this repository is pinned to.
-    required: false
-    default: main
+  Installs dependencies, including the survey engine from GitHub Packages. The calling job needs
+  `packages: read`.
 
 runs:
   using: composite
   steps:
-    - name: Check out DistrictWorkflow for the survey engine
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        repository: LBDistrictScouts/DistrictWorkflow
-        ref: ${{ inputs.engine-ref }}
-        path: DistrictWorkflow
-        persist-credentials: false
-
     - name: Set up Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: 24
 
-    - name: Build the survey engine
-      shell: bash
-      working-directory: DistrictWorkflow
-      run: |
-        corepack enable
-        corepack yarn workspaces focus @lbdistrictscouts/survey-engine
-        corepack yarn workspace @lbdistrictscouts/survey-engine package
-
     - name: Install dependencies
       shell: bash
       working-directory: district-survey
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         corepack enable
         yarn install --immutable

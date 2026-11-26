@@ -18,12 +18,11 @@ the contracts shared with DistrictWorkflow and DistrictStatistics. The design is
 
 Use Yarn through Corepack. The version is pinned by `packageManager` in `package.json`. Never use npm, npx or pnpm, and never commit a `package-lock.json`.
 
-The survey engine, `@lbdistrictscouts/survey-engine`, lives in `DistrictWorkflow/packages/survey-engine`. Until
-it is published to GitHub Packages it is a `file:` dependency on `packages/survey-engine/package/` in a sibling
-checkout: the packed engine, unpacked. Not the engine folder, because Yarn hashes every file in it, including
-local-only ones such as `coverage/`, and not the tarball, because gzip output differs between macOS and Linux.
-Either way the lockfile would never match CI. After changing the engine, run
-`corepack yarn workspace @lbdistrictscouts/survey-engine package` in DistrictWorkflow, then `yarn install` here.
+The survey engine, `@lbdistrictscouts/survey-engine`, lives in `DistrictWorkflow/packages/survey-engine` and is
+installed from GitHub Packages at a pinned version. `yarn install` needs `GITHUB_TOKEN` set to a token with
+`read:packages`, such as `$(gh auth token)` after `gh auth refresh -s read:packages`. To change the engine,
+publish a new version from DistrictWorkflow by pushing a `survey-engine-v<version>` tag, then update the
+version in `package.json` here.
 
 ## Commands
 
