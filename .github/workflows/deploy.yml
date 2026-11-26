@@ -23,8 +23,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # runs-on cannot be empty, so until SURVEY_RUNNER_LABEL is set the deploy is skipped with a warning
+  # instead of the whole workflow being rejected.
+  configured:
+    name: Check the deploy is configured
+    runs-on: ubuntu-24.04
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          RUNNER_LABEL: ${{ vars.SURVEY_RUNNER_LABEL }}
+        run: |
+          if [ -n "$RUNNER_LABEL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Deploy skipped: set the SURVEY_RUNNER_LABEL repository variable to the cluster runner's label."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
     name: Deploy to ${{ github.event_name == 'push' && 'test' || inputs.environment }}
+    needs: configured
+    if: needs.configured.outputs.ready == 'true'
     runs-on: ${{ vars.SURVEY_RUNNER_LABEL }}
     environment: ${{ github.event_name == 'push' && 'test' || inputs.environment }}
     permissions:

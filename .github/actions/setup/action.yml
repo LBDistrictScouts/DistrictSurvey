@@ -32,7 +32,7 @@ runs:
       run: |
         corepack enable
         corepack yarn workspaces focus @lbdistrictscouts/survey-engine
-        corepack yarn workspace @lbdistrictscouts/survey-engine build
+        corepack yarn workspace @lbdistrictscouts/survey-engine package
 
     - name: Install dependencies
       shell: bash

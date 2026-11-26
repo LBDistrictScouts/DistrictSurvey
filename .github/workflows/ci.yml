@@ -162,6 +162,10 @@ jobs:
       - run: yarn playwright install --with-deps chromium firefox webkit
       - name: Moto, as DistrictWorkflow runs it
         run: docker run --rm -d --name moto -p 127.0.0.1:4566:4566 -e MOTO_PORT=4566 motoserver/moto:5.2.1
+      - name: Moto honours conditional writes
+        run: yarn vitest run tests/functions/s3-records.moto.test.ts
+        env:
+          AWS_ENDPOINT_URL: http://localhost:4566
       - run: yarn build
       - run: yarn test:e2e
         env:

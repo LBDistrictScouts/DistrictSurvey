@@ -6,7 +6,9 @@
 import { execFileSync, spawnSync } from "node:child_process";
 
 const container = "district-survey-moto";
-const run = (command: string, args: string[]) => execFileSync(command, args, { stdio: "inherit" });
+// playwright.config.ts uses memory storage unless AWS_ENDPOINT_URL is set, so set it for every command.
+const env = { ...process.env, AWS_ENDPOINT_URL: process.env.AWS_ENDPOINT_URL ?? "http://localhost:4566" };
+const run = (command: string, args: string[]) => execFileSync(command, args, { stdio: "inherit", env });
 
 function motoRunning(): boolean {
   return spawnSync("docker", ["inspect", "-f", "{{.State.Running}}", container], { encoding: "utf8" }).stdout.trim() === "true";
@@ -18,6 +20,7 @@ if (!process.env.AWS_ENDPOINT_URL && !motoRunning()) {
 }
 
 try {
+  run("yarn", ["vitest", "run", "tests/functions/s3-records.moto.test.ts"]);
   run("yarn", ["build"]);
   run("yarn", ["test:e2e"]);
   run("yarn", ["test:a11y"]);

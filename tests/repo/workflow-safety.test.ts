@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { parse } from "yaml";
 
-type Job = { "runs-on"?: string; environment?: string; permissions?: Record<string, string>; steps?: { uses?: string; run?: string }[] };
+type Job = { "runs-on"?: string; if?: string; environment?: string; permissions?: Record<string, string>; steps?: { uses?: string; run?: string }[] };
 type Workflow = { on: Record<string, unknown>; permissions?: Record<string, string>; jobs: Record<string, Job> };
 
 const directory = ".github/workflows";
@@ -29,7 +29,10 @@ describe("workflow safety", () => {
         }
       }
     }
-    expect(workflows["deploy.yml"]!.jobs.deploy!["runs-on"]).toBe("${{ vars.SURVEY_RUNNER_LABEL }}");
+    const deploy = workflows["deploy.yml"]!.jobs.deploy!;
+    expect(deploy["runs-on"]).toBe("${{ vars.SURVEY_RUNNER_LABEL }}");
+    // Skipped, not rejected, until the runner label is set.
+    expect(deploy.if).toBe("needs.configured.outputs.ready == 'true'");
   });
 
   it("[G27] deploys use short-lived credentials in a GitHub environment, and production needs a tag", () => {

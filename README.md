@@ -20,7 +20,7 @@ DistrictWorkflow's `packages/survey-engine`.
 ```bash
 corepack enable
 # The engine is a file dependency on a DistrictWorkflow checkout beside this one, until it is published.
-(cd ../DistrictWorkflow && corepack yarn install && corepack yarn workspace @lbdistrictscouts/survey-engine build)
+(cd ../DistrictWorkflow && corepack yarn install && corepack yarn workspace @lbdistrictscouts/survey-engine package)
 yarn install
 yarn dev
 ```
