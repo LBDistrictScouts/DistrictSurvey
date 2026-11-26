@@ -978,10 +978,10 @@ rebuilding the previous release ID.
 
 ### Additional Resources
 
-*   [Concepts brief](./concepts_brief.md)
-*   `../DistrictInfrastructure/modules/contact-form` for the Turnstile, API and alarm patterns
-*   `../DistrictWorkflow/docs/reusable-activities.md` for reminders, signed links and themed email
-*   `../district-site/Notes/TSA-BRAND-COMPLIANCE-CHECKLIST.md` for brand rules
+*   [Concepts brief](concepts_brief.md)
+* `../../../../DistrictInfrastructure/modules/contact-form` for the Turnstile, API and alarm patterns
+* `../../../../DistrictWorkflow/docs/reusable-activities.md` for reminders, signed links and themed email
+* `../../../../district-site/Notes/TSA-BRAND-COMPLIANCE-CHECKLIST.md` for brand rules
 
 ### Future Improvements
 
@@ -1019,29 +1019,29 @@ rebuilding the previous release ID.
 
 | File | Action | Change and reason |
 | --- | --- | --- |
-| `package.json` | Modify | Add `survey:validate`, `test`, `test:coverage`, `test:mutation`, `test:e2e`, `test:a11y` and `build:functions` scripts. Make `build` call validation directly, and add runtime and test dependencies. |
-| `yarn.lock` | Modify | Records the new dependencies. |
-| `next.config.ts` | Modify | Set `trailingSlash: false` so routes match CloudFront's clean address rewrite. |
-| `tsconfig.json` | Modify | Include function, script and test code in type checking. |
-| `eslint.config.mjs` | Modify | Ignore vendored and generated output, and ban direct imports from `src/vendor/alignui` outside `src/ui`. |
-| `.gitignore` | Modify | Ignore Terraform state, variable files, invite exports, private settings and built functions. |
-| `README.md` | Modify | Describe the project, setup, commands and architecture. |
-| `CLAUDE.md` | Modify | Add the two-Lambda boundary, the survey commands and the rule on logged fields. |
+| `../../../package.json` | Modify | Add `survey:validate`, `test`, `test:coverage`, `test:mutation`, `test:e2e`, `test:a11y` and `build:functions` scripts. Make `build` call validation directly, and add runtime and test dependencies. |
+| `../../../yarn.lock` | Modify | Records the new dependencies. |
+| `../../../next.config.ts` | Modify | Set `trailingSlash: false` so routes match CloudFront's clean address rewrite. |
+| `../../../tsconfig.json` | Modify | Include function, script and test code in type checking. |
+| `../../../eslint.config.mjs` | Modify | Ignore vendored and generated output, and ban direct imports from `src/vendor/alignui` outside `src/ui`. |
+| `../../../.gitignore` | Modify | Ignore Terraform state, variable files, invite exports, private settings and built functions. |
+| `../../../README.md` | Modify | Describe the project, setup, commands and architecture. |
+| `../../../CLAUDE.md` | Modify | Add the two-Lambda boundary, the survey commands and the rule on logged fields. |
 | `LICENSE` | Create | Publishes the project under the MIT licence. |
 | `THIRD_PARTY_NOTICES.md` | Create | Records the source, version and licence of each copied AlignUI component. |
 | `vitest.config.ts` | Create | Configures unit and component tests and enforces the coverage thresholds. |
 | `stryker.config.mjs` | Create | Runs mutation tests on the survey engine and signing code. |
 | `playwright.config.ts` | Create | Configures browser tests in both themes. |
 | `.pa11yci.cjs` | Create | Configures automated accessibility checks on the exported site. |
-| `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg` | Delete | Removes unused starter assets. |
+| `../../../public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg` | Delete | Removes unused starter assets. |
 
 ##### Application pages and styles
 
 | File | Action | Change and reason |
 | --- | --- | --- |
-| `src/app/layout.tsx` | Modify | Load Nunito Sans, set metadata from district settings, and add the theme provider. |
-| `src/app/globals.css` | Modify | Define light and dark brand tokens, map AlignUI tokens to them, and add focus styles. |
-| `src/app/page.tsx` | Modify | Replace the starter page with the survey start page and privacy summary. |
+| `../../../src/app/layout.tsx` | Modify | Load Nunito Sans, set metadata from district settings, and add the theme provider. |
+| `../../../src/app/globals.css` | Modify | Define light and dark brand tokens, map AlignUI tokens to them, and add focus styles. |
+| `../../../src/app/page.tsx` | Modify | Replace the starter page with the survey start page and privacy summary. |
 | `src/app/survey/page.tsx` | Create | Hosts the client-side survey runner for open and tracked links. |
 | `src/app/results/page.tsx` | Create | Renders the protected grouped results from the release supplied at build time. |
 | `src/app/results-access/page.tsx` | Create | Exchanges the emailed results token for signed cookies. |
@@ -1355,7 +1355,7 @@ if a required suite fails, a coverage threshold is missed, or a goal in the trac
 | `src/lib/survey-engine` | 100% | 100% | Mutation score of at least 90% |
 | `functions/**` | 95% | 95% | Mutation score of at least 80% for signing and S3 record code |
 | `src/lib/client`, `src/lib/config`, `src/lib/contracts` | 95% | 90% | None |
-| `src/components`, `src/ui`, `src/app` | 90% | 85% | Every screen covered by end-to-end tests |
+| `src/components`, `src/ui`, `../../../src/app` | 90% | 85% | Every screen covered by end-to-end tests |
 | DistrictWorkflow survey code | 95% | 90% | Workflow replay test for every survey workflow |
 | DistrictStatistics import and results services | 100% | 95% | Shared golden files must match |
 | Other DistrictStatistics survey code | 90% | 85% | PHPStan at level 8 with no ignored survey errors |
